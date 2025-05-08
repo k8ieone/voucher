@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=qariant
+Exec=qariant
+Icon=one.k8ie.qariant
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=GTK;
+StartupNotify=true
+DBusActivatable=true

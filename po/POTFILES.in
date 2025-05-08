@@ -1,0 +1,8 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+data/one.k8ie.qariant.desktop.in
+data/one.k8ie.qariant.metainfo.xml.in
+data/one.k8ie.qariant.gschema.xml
+src/main.py
+src/window.py
+src/window.ui
