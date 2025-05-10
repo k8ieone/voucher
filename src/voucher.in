@@ -1,6 +1,6 @@
 #!@PYTHON@
 
-# qariant.in
+# voucher.in
 #
 # Copyright 2025 Unknown
 #
@@ -31,16 +31,16 @@ localedir = '@localedir@'
 
 sys.path.insert(1, pkgdatadir)
 signal.signal(signal.SIGINT, signal.SIG_DFL)
-locale.bindtextdomain('qariant', localedir)
-locale.textdomain('qariant')
-gettext.install('qariant', localedir)
+locale.bindtextdomain('voucher', localedir)
+locale.textdomain('voucher')
+gettext.install('voucher', localedir)
 
 if __name__ == '__main__':
     import gi
 
     from gi.repository import Gio
-    resource = Gio.Resource.load(os.path.join(pkgdatadir, 'qariant.gresource'))
+    resource = Gio.Resource.load(os.path.join(pkgdatadir, 'voucher.gresource'))
     resource._register()
 
-    from qariant import main
+    from voucher import main
     sys.exit(main.main(VERSION))

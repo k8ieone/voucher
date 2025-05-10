@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=one.k8ie.qariant
-Exec=@bindir@/qariant --gapplication-service

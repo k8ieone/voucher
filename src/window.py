@@ -20,9 +20,9 @@
 from gi.repository import Adw
 from gi.repository import Gtk
 
-@Gtk.Template(resource_path='/one/k8ie/qariant/window.ui')
-class QariantWindow(Adw.ApplicationWindow):
-    __gtype_name__ = 'QariantWindow'
+@Gtk.Template(resource_path='/one/k8ie/Voucher/window.ui')
+class VoucherWindow(Adw.ApplicationWindow):
+    __gtype_name__ = 'VoucherWindow'
 
     label = Gtk.Template.Child()
 

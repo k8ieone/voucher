@@ -24,16 +24,16 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 
 from gi.repository import Gtk, Gio, Adw
-from .window import QariantWindow
+from .window import VoucherWindow
 
 
-class QariantApplication(Adw.Application):
+class VoucherApplication(Adw.Application):
     """The main application singleton class."""
 
     def __init__(self):
-        super().__init__(application_id='one.k8ie.qariant',
+        super().__init__(application_id='one.k8ie.Voucher',
                          flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
-                         resource_base_path='/one/k8ie/qariant')
+                         resource_base_path='/one/k8ie/Voucher')
         self.create_action('quit', lambda *_: self.quit(), ['<primary>q'])
         self.create_action('about', self.on_about_action)
         self.create_action('preferences', self.on_preferences_action)
@@ -46,13 +46,13 @@ class QariantApplication(Adw.Application):
         """
         win = self.props.active_window
         if not win:
-            win = QariantWindow(application=self)
+            win = VoucherWindow(application=self)
         win.present()
 
     def on_about_action(self, *args):
         """Callback for the app.about action."""
-        about = Adw.AboutDialog(application_name='qariant',
-                                application_icon='one.k8ie.qariant',
+        about = Adw.AboutDialog(application_name='voucher',
+                                application_icon='one.k8ie.Voucher',
                                 developer_name='Unknown',
                                 version='0.1.0',
                                 developers=['Unknown'],
@@ -83,5 +83,5 @@ class QariantApplication(Adw.Application):
 
 def main(version):
     """The application's entry point."""
-    app = QariantApplication()
+    app = VoucherApplication()
     return app.run(sys.argv)

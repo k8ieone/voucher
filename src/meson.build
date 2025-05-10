@@ -1,9 +1,9 @@
 pkgdatadir = get_option('prefix') / get_option('datadir') / meson.project_name()
-moduledir = pkgdatadir / 'qariant'
+moduledir = pkgdatadir / 'voucher'
 gnome = import('gnome')
 
-gnome.compile_resources('qariant',
-  'qariant.gresource.xml',
+gnome.compile_resources('voucher',
+  'voucher.gresource.xml',
   gresource_bundle: true,
   install: true,
   install_dir: pkgdatadir,
@@ -18,18 +18,18 @@ conf.set('localedir', get_option('prefix') / get_option('localedir'))
 conf.set('pkgdatadir', pkgdatadir)
 
 configure_file(
-  input: 'qariant.in',
-  output: 'qariant',
+  input: 'voucher.in',
+  output: 'voucher',
   configuration: conf,
   install: true,
   install_dir: get_option('bindir'),
   install_mode: 'r-xr-xr-x'
 )
 
-qariant_sources = [
+voucher_sources = [
   '__init__.py',
   'main.py',
   'window.py',
 ]
 
-install_data(qariant_sources, install_dir: moduledir)
+install_data(voucher_sources, install_dir: moduledir)

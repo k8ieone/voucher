@@ -1,4 +1,4 @@
-application_id = 'one.k8ie.qariant'
+application_id = 'one.k8ie.Voucher'
 
 scalable_dir = 'hicolor' / 'scalable' / 'apps'
 install_data(

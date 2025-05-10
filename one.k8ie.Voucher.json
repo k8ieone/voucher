@@ -1,9 +1,9 @@
 {
-    "id" : "one.k8ie.qariant",
+    "id" : "one.k8ie.Voucher",
     "runtime" : "org.gnome.Platform",
     "runtime-version" : "master",
     "sdk" : "org.gnome.Sdk",
-    "command" : "qariant",
+    "command" : "voucher",
     "finish-args" : [
         "--share=network",
         "--share=ipc",
@@ -24,13 +24,13 @@
     ],
     "modules" : [
         {
-            "name" : "qariant",
+            "name" : "voucher",
             "builddir" : true,
             "buildsystem" : "meson",
             "sources" : [
                 {
                     "type" : "git",
-                    "url" : "file:///home/k8ie/Documents/aquarius/qariant"
+                    "url" : "file:///home/k8ie/Projects"
                 }
             ]
         }

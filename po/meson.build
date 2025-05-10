@@ -1,1 +1,1 @@
-i18n.gettext('qariant', preset: 'glib')
+i18n.gettext('voucher', preset: 'glib')
