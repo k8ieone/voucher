@@ -50,6 +50,10 @@ class VoucherApplication(Adw.Application):
             win = VoucherWindow(application=self)
         win.present()
 
+    def do_startup(self):
+        #Adw.Application.do_startup(self)
+        print("Application started via D-Bus.")
+
     def do_open(self, files, n_files, hint):
         for file in files:
             uri = file.get_uri()
