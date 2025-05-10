@@ -32,7 +32,7 @@ class VoucherApplication(Adw.Application):
 
     def __init__(self):
         super().__init__(application_id='one.k8ie.Voucher',
-                         flags=Gio.ApplicationFlags.HANDLES_OPEN,
+                         flags=Gio.ApplicationFlags.DEFAULT_FLAGS | Gio.ApplicationFlags.HANDLES_OPEN,
                          resource_base_path='/one/k8ie/Voucher')
         self.create_action('quit', lambda *_: self.quit(), ['<primary>q'])
         self.create_action('about', self.on_about_action)
