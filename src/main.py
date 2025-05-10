@@ -53,6 +53,7 @@ class VoucherApplication(Adw.Application):
     def do_startup(self):
         Adw.Application.do_startup(self)
         print("Application started via D-Bus.")
+        self.do_activate()
 
     def do_open(self, files, n_files, hint):
         for file in files:
