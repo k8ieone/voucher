@@ -45,7 +45,7 @@
             "sources" : [
                 {
                     "type" : "git",
-                    "url" : "file:///home/k8ie/Documents/quorra/voucher"
+                    "url" : "https://git.mcld.eu/Quorra/voucher"
                 }
             ]
         }
