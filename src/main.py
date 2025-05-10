@@ -44,21 +44,22 @@ class VoucherApplication(Adw.Application):
         We raise the application's main window, creating it if
         necessary.
         """
-        print("Activated (no URL)")
+        print("do_activate")
         win = self.props.active_window
         if not win:
             win = VoucherWindow(application=self)
         win.present()
 
     def do_startup(self):
+        print("do_startup")
         Adw.Application.do_startup(self)
-        print("Application started via D-Bus.")
-        self.do_activate()
 
     def do_open(self, files, n_files, hint):
+        print("do_open")
         for file in files:
             uri = file.get_uri()
             print(f"Received URI: {uri}")
+        self.do_activate()
 
     def on_about_action(self, *args):
         """Callback for the app.about action."""
