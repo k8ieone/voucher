@@ -32,7 +32,7 @@ class VoucherApplication(Adw.Application):
 
     def __init__(self):
         super().__init__(application_id='one.k8ie.Voucher',
-                         flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
+                         flags=Gio.ApplicationFlags.DEFAULT_FLAGS | Gio.ApplicationFlags.HANDLES_OPEN,
                          resource_base_path='/one/k8ie/Voucher')
         self.create_action('quit', lambda *_: self.quit(), ['<primary>q'])
         self.create_action('about', self.on_about_action)
@@ -44,10 +44,16 @@ class VoucherApplication(Adw.Application):
         We raise the application's main window, creating it if
         necessary.
         """
+        print("Activated (no URL)")
         win = self.props.active_window
         if not win:
             win = VoucherWindow(application=self)
         win.present()
+
+    def do_open(self, files, n_files, hint):
+        for file in files:
+            uri = file.get_uri()
+            print(f"Received URI: {uri}")
 
     def on_about_action(self, *args):
         """Callback for the app.about action."""
