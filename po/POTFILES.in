@@ -5,4 +5,4 @@ data/one.k8ie.Voucher.metainfo.xml.in
 data/one.k8ie.Voucher.gschema.xml
 src/main.py
 src/window.py
-src/window.ui
+src/window.blp
