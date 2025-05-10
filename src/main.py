@@ -44,33 +44,29 @@ class VoucherApplication(Adw.Application):
         We raise the application's main window, creating it if
         necessary.
         """
-        print("do_activate")
         win = self.props.active_window
         if not win:
             win = VoucherWindow(application=self)
             win.present()
 
     def do_startup(self):
-        print("do_startup")
         Adw.Application.do_startup(self)
 
     def do_open(self, files, n_files, hint):
-        print("do_open")
         for file in files:
             uri = file.get_uri()
-            print(f"Received URI: {uri}")
         self.do_activate()
+        self.props.active_window.handle_uri(uri)
 
     def on_about_action(self, *args):
         """Callback for the app.about action."""
-        about = Adw.AboutDialog(application_name='voucher',
+        about = Adw.AboutDialog(application_name='Voucher',
                                 application_icon='one.k8ie.Voucher',
-                                developer_name='Unknown',
+                                developer_name='Kateřina Medvědová',
                                 version='0.1.0',
-                                developers=['Unknown'],
-                                copyright='© 2025 Unknown')
-        # Translators: Replace "translator-credits" with your name/username, and optionally an email or URL.
-        about.set_translator_credits(_('translator-credits'))
+                                developers=['Kateřina Medvědová'],
+                                copyright='© 2025 ',
+                                license_type=Gtk.License(3))
         about.present(self.props.active_window)
 
     def on_preferences_action(self, widget, _):

@@ -3,31 +3,38 @@ using Adw 1;
 
 template $VoucherWindow: Adw.ApplicationWindow {
   title: _("Voucher");
-  default-width: 800;
+  default-width: 200;
   default-height: 600;
+  content: activation;
+}
 
-  content: Adw.ToolbarView {
-    [top]
-    Adw.HeaderBar {
-      [end]
-      MenuButton {
-        primary: true;
-        icon-name: "open-menu-symbolic";
-        tooltip-text: _("Main Menu");
-        menu-model: primary_menu;
-      }
+
+Adw.ToolbarView activation {
+  [top]
+  Adw.HeaderBar {
+    [end]
+    Gtk.MenuButton {
+      primary: true;
+      icon-name: "open-menu-symbolic";
+      tooltip-text: _("Menu");
+      menu-model: primary_menu;
     }
-
-    content: Label label {
-      label: _("Hello, World!");
-
-      styles [
-        "title-1",
-      ]
+  }
+  content: Adw.StatusPage {
+    title: "Activate Voucher";
+    description: "Start by scanning a Quorra activation code in your camera app";
+    child: Adw.Clamp {
+      maximum-size: 250;
+      child: Gtk.Button manual_activation_button {
+        styles ["pill"]
+        label: "Activate manually";
+        action-name: "win.start";
+      };
     };
   };
 }
 
+// Menu
 menu primary_menu {
   section {
     item {

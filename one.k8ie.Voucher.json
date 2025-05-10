@@ -23,6 +23,7 @@
         "*.a"
     ],
     "modules" : [
+    	"requests.json",
         {
             "name": "blueprint-compiler",
             "buildsystem": "meson",
