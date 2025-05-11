@@ -3,6 +3,9 @@
     "runtime" : "org.gnome.Platform",
     "runtime-version" : "48",
     "sdk" : "org.gnome.Sdk",
+    "sdk-extensions" : [
+        "org.freedesktop.Sdk.Extension.rust-stable"
+    ],
     "command" : "voucher",
     "finish-args" : [
         "--share=network",
@@ -23,7 +26,13 @@
         "*.a"
     ],
     "modules" : [
-    	"requests.json",
+        "flatpak-deps/python3-requests.json",
+        "flatpak-deps/python3-platformdirs.json",
+
+        "flatpak-deps/python3-setuptools_rust.json",
+        "flatpak-deps/python3-maturin.json",
+        "flatpak-deps/python3-cffi.json",
+        "flatpak-deps/python3-cryptography.json",
         {
             "name": "blueprint-compiler",
             "buildsystem": "meson",

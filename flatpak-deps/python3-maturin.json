@@ -1,0 +1,22 @@
+{
+    "name": "python3-maturin",
+    "buildsystem": "simple",
+    "build-commands": [
+        "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \"maturin\" --no-build-isolation"
+    ],
+    "build-options": {
+        "append-path" : "/usr/lib/sdk/rust-stable/bin",
+    	"env": {
+    		"MATURIN_NO_INSTALL_RUST": "true",
+    		"CARGO_HOME": "/run/build/python3-maturin/cargo"
+    	}
+    },
+    "sources": [
+        "cargo-maturin-sources.json",
+        {
+            "type": "file",
+            "url": "https://files.pythonhosted.org/packages/e0/23/bc3cfe0537e82a9f6d5aeef79066df5179c27e64bb536917d7b3fcec1232/maturin-1.8.4.tar.gz",
+            "sha256": "abe251545c3bf172b9514460d46ba22eaf2ca6c4310f7b06cebf69b4d365e4f7"
+        }
+    ]
+}
