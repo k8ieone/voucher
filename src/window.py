@@ -20,19 +20,29 @@
 from gi.repository import Adw
 from gi.repository import Gtk
 
+from platformdirs import user_data_dir
+
 from urllib.parse import uses_params, urlparse, parse_qs
 
 import requests
+from nacl.signing import SigningKey
+from nacl.encoding import HexEncoder
+#from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 @Gtk.Template(resource_path='/one/k8ie/Voucher/window.ui')
 class VoucherWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'VoucherWindow'
     uses_params = ['', 'quorra+http', 'quorra+https']
     manual_activation_button = Gtk.Template.Child()
+    print(user_data_dir())
 
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        priv_key = SigningKey.generate()
+        pub_key = signing_key.verify_key
+        print(signing_key.encode(encoder=HexEncoder).decode())
+
 
     def display_dialog(self, message, text=None):
         d = Adw.AlertDialog(heading=message, body=text)
@@ -41,6 +51,8 @@ class VoucherWindow(Adw.ApplicationWindow):
 
     def device_registration(self, api_addr, token, device_name=None):
         # TODO: First generate a private key
+        priv_key = SigningKey.generate()
+        pub_key = signing_key.verify_key
         # Prepare the registration request with the associated TODO: public key
         body = {"pubkey": "totally a valid key"}
         headers = {"x-registration-token": token}
