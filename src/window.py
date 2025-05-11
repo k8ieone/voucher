@@ -20,28 +20,26 @@
 from gi.repository import Adw
 from gi.repository import Gtk
 
-from platformdirs import user_data_dir
-
+from platformdirs import user_data_path
 from urllib.parse import uses_params, urlparse, parse_qs
+from pathlib import Path
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives import serialization
 
 import requests
-from nacl.signing import SigningKey
-from nacl.encoding import HexEncoder
-#from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 @Gtk.Template(resource_path='/one/k8ie/Voucher/window.ui')
 class VoucherWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'VoucherWindow'
     uses_params = ['', 'quorra+http', 'quorra+https']
     manual_activation_button = Gtk.Template.Child()
-    print(user_data_dir())
-
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        priv_key = SigningKey.generate()
-        pub_key = signing_key.verify_key
-        print(signing_key.encode(encoder=HexEncoder).decode())
+        self.KEY_LOCATION = user_data_path("voucher") / "key.pem"
+        if not user_data_path("voucher").exists():
+            user_data_path("voucher").mkdir()
 
 
     def display_dialog(self, message, text=None):
@@ -50,20 +48,31 @@ class VoucherWindow(Adw.ApplicationWindow):
         d.present(parent=self)
 
     def device_registration(self, api_addr, token, device_name=None):
-        # TODO: First generate a private key
-        priv_key = SigningKey.generate()
-        pub_key = signing_key.verify_key
-        # Prepare the registration request with the associated TODO: public key
-        body = {"pubkey": "totally a valid key"}
+        # First generate a private key
+        private_key = Ed25519PrivateKey.generate()
+        # Prepare the registration request with the associated public key
+        public_key = private_key.public_key()
+        public_key_pem = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        public_pem_str = public_key_pem.decode('utf-8')
+        body = {"pubkey": public_pem_str}
         headers = {"x-registration-token": token}
         # Send the registration request
         r = requests.post(api_addr + "/mobile/register", json=body, headers=headers)
-        print(r.text)
         print(r.request.body)
-        print(token)
         if r.status_code == 201:
             self.display_dialog("Activation successful", "This device has been successfully activated!")
-        # TODO: Save the private key to a file
+            # Save the private key to a file
+            with open(self.KEY_LOCATION, "wb") as f:
+                f.write(private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption()
+                ))
+        else:
+            self.display_dialog("Activation failed", r.text)
 
     def extract_base_path(self, addr):
         marker = "/mobile/"
@@ -73,14 +82,15 @@ class VoucherWindow(Adw.ApplicationWindow):
 
     def handle_uri(self, uri):
         parsed = urlparse(uri)
-        print(parsed)
         scheme = "http://"
         if parsed.scheme == "quorra+https":
             scheme = "https://"
         queries = parse_qs(parsed.query)
-        print(queries)
         last_segment = parsed.path.split("/")[-1]
         base_path = self.extract_base_path(parsed.path)
         api_addr = scheme + parsed.netloc + base_path
         if last_segment == "register":
-            self.device_registration(api_addr, queries["t"][0])
+            if self.KEY_LOCATION.exists():
+                self.display_dialog("Voucher is already active", "More than one activation is not supported.")
+            else:
+                self.device_registration(api_addr, queries["t"][0])
