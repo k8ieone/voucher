@@ -26,6 +26,7 @@ from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives import serialization
+import base64
 
 import requests
 
@@ -47,7 +48,9 @@ class VoucherWindow(Adw.ApplicationWindow):
         d.add_response(id="ok", label="Awesome!")
         d.present(parent=self)
 
-    def device_registration(self, api_addr, token, device_name=None):
+
+    def device_registration(self, api_addr, token):
+        device_name = None
         # First generate a private key
         private_key = Ed25519PrivateKey.generate()
         # Prepare the registration request with the associated public key
@@ -74,11 +77,31 @@ class VoucherWindow(Adw.ApplicationWindow):
         else:
             self.display_dialog("Activation failed", r.text)
 
+
+    def aqr_identify(self, api_addr, session):
+        with open(self.KEY_LOCATION, "rb") as f:
+            private_key = serialization.load_pem_private_key(
+                f.read(),
+                password=None
+            )
+        message = session
+        signature = private_key.sign(message.encode('utf-8'))
+        body = {"signature": base64.b64encode(signature).decode('utf-8'), "message": message}
+        params = {"session": session}
+        print(body)
+        r = requests.post(api_addr + "/mobile/aqr/identify", json=body, params=params)
+        if r.status_code == 200:
+            self.display_dialog("Session identified", "bottom text")
+        else:
+            self.display_dialog("Request failed", r.text)
+
+
     def extract_base_path(self, addr):
         marker = "/mobile/"
         idx = addr.find(marker)
         base_path = addr[:idx]
         return base_path
+
 
     def handle_uri(self, uri):
         parsed = urlparse(uri)
@@ -94,3 +117,8 @@ class VoucherWindow(Adw.ApplicationWindow):
                 self.display_dialog("Voucher is already active", "More than one activation is not supported.")
             else:
                 self.device_registration(api_addr, queries["t"][0])
+        if last_segment == "login":
+            if not self.KEY_LOCATION.exists():
+                self.display_dialog("Please activate Voucher first", "This application hasn't been activated yet.")
+            else:
+                self.aqr_identify(api_addr, queries["s"][0])
