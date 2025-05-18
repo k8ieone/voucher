@@ -54,7 +54,7 @@
             "sources" : [
                 {
                     "type" : "git",
-                    "url" : "https://git.mcld.eu/Quorra/voucher",
+                    "url" : "https://github.com/k8ieone/voucher",
                     "tag" : "main"
                 }
             ]
