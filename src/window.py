@@ -23,11 +23,14 @@ from gi.repository import Gtk
 from platformdirs import user_data_path
 from urllib.parse import uses_params, urlparse, parse_qs
 from pathlib import Path
+from uuid import uuid4
+# TODO: Get rid of sleep
+from time import sleep
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives import serialization
-import base64
 
+import base64
 import requests
 
 @Gtk.Template(resource_path='/one/k8ie/Voucher/window.ui')
@@ -78,20 +81,41 @@ class VoucherWindow(Adw.ApplicationWindow):
             self.display_dialog("Activation failed", r.text)
 
 
-    def aqr_identify(self, api_addr, session):
+    def sign_message(self, message):
         with open(self.KEY_LOCATION, "rb") as f:
             private_key = serialization.load_pem_private_key(
                 f.read(),
                 password=None
             )
-        message = session
+        # Signing requires binary data
         signature = private_key.sign(message.encode('utf-8'))
-        body = {"signature": base64.b64encode(signature).decode('utf-8'), "message": message}
+        # Resulting signature is also binary data which we can't send in JSON
+        # so we base64-encode the signature data first
+        return base64.b64encode(signature).decode('utf-8')
+
+
+    def aqr_identify(self, api_addr, session):
+        action = "identify"
+        message = "{} {}".format(action, str(uuid4()))
+        signature = self.sign_message(message)
+        body = {"signature": signature, "message": message}
         params = {"session": session}
-        print(body)
         r = requests.post(api_addr + "/mobile/aqr/identify", json=body, params=params)
         if r.status_code == 200:
             self.display_dialog("Session identified", "bottom text")
+        else:
+            self.display_dialog("Request failed", r.text)
+
+
+    def aqr_authenticate(self, api_addr, session):
+        action = "accepted"
+        message = str(uuid4())
+        signature = self.sign_message(message)
+        body = {"signature": signature, "message": message, "state": action}
+        params = {"session": session}
+        r = requests.post(api_addr + "/mobile/aqr/authenticate", json=body, params=params)
+        if r.status_code == 200:
+            self.display_dialog("Session confirmed", "bottom text")
         else:
             self.display_dialog("Request failed", r.text)
 
@@ -122,3 +146,5 @@ class VoucherWindow(Adw.ApplicationWindow):
                 self.display_dialog("Please activate Voucher first", "This application hasn't been activated yet.")
             else:
                 self.aqr_identify(api_addr, queries["s"][0])
+                sleep(10)
+                self.aqr_authenticate(api_addr, queries["s"][0])
