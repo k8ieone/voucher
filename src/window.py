@@ -38,16 +38,34 @@ class VoucherWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'VoucherWindow'
     uses_params = ['', 'quorra+http', 'quorra+https']
     manual_activation_button = Gtk.Template.Child()
+    main_status = Gtk.Template.Child()
+    main_nav_view = Gtk.Template.Child()
+    confirmation_page = Gtk.Template.Child()
+    confirm_button = Gtk.Template.Child()
+    reject_button = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.KEY_LOCATION = user_data_path("voucher") / "key.pem"
         if not user_data_path("voucher").exists():
             user_data_path("voucher").mkdir()
+        if self.KEY_LOCATION.exists():
+            self.after_activation()
+
+    def after_activation(self):
+        self.main_status.set_title("Voucher is ready")
+        self.main_status.set_description("Scan a Quorra login code to sign in")
+        self.main_status.set_child(None)
+        self.confirm_button.connect("clicked", self.aqr_accept)
+        self.reject_button.connect("clicked", self.aqr_reject)
 
 
     def display_dialog(self, message, text=None):
-        d = Adw.AlertDialog(heading=message, body=text)
+        # Prevents a critical Adwaita warning
+        if text is None:
+            d = Adw.AlertDialog(heading=message)
+        else:
+            d = Adw.AlertDialog(heading=message, body=text)
         d.add_response(id="ok", label="Awesome!")
         d.present(parent=self)
 
@@ -67,7 +85,6 @@ class VoucherWindow(Adw.ApplicationWindow):
         headers = {"x-registration-token": token}
         # Send the registration request
         r = requests.post(api_addr + "/mobile/register", json=body, headers=headers)
-        print(r.request.body)
         if r.status_code == 201:
             self.display_dialog("Activation successful", "This device has been successfully activated!")
             # Save the private key to a file
@@ -77,6 +94,7 @@ class VoucherWindow(Adw.ApplicationWindow):
                     format=serialization.PrivateFormat.PKCS8,
                     encryption_algorithm=serialization.NoEncryption()
                 ))
+            self.after_activation()
         else:
             self.display_dialog("Activation failed", r.text)
 
@@ -101,23 +119,37 @@ class VoucherWindow(Adw.ApplicationWindow):
         body = {"signature": signature, "message": message}
         params = {"session": session}
         r = requests.post(api_addr + "/mobile/aqr/identify", json=body, params=params)
-        if r.status_code == 200:
-            self.display_dialog("Session identified", "bottom text")
-        else:
+        if r.status_code != 200:
             self.display_dialog("Request failed", r.text)
 
 
-    def aqr_authenticate(self, api_addr, session):
-        action = "accepted"
+    def aqr_accept(self, widget):
+        self.aqr_authenticate("accepted")
+
+
+    def aqr_reject(self, widget):
+        self.aqr_authenticate("rejected")
+
+
+    def pop_confirmation_page(self, widget):
+        self.main_nav_view.pop()
+
+
+    def aqr_authenticate(self, action):
+        api_addr, session = self.current_request
         message = str(uuid4())
         signature = self.sign_message(message)
         body = {"signature": signature, "message": message, "state": action}
         params = {"session": session}
         r = requests.post(api_addr + "/mobile/aqr/authenticate", json=body, params=params)
-        if r.status_code == 200:
-            self.display_dialog("Session confirmed", "bottom text")
-        else:
+        if r.status_code != 200:
             self.display_dialog("Request failed", r.text)
+        else:
+            if action == "accepted":
+                d = Adw.AlertDialog(heading="Session authorized")
+                d.add_response(id="ok", label="Awesome!")
+                d.connect("closed", self.pop_confirmation_page)
+                d.present(parent=self)
 
 
     def extract_base_path(self, addr):
@@ -145,6 +177,6 @@ class VoucherWindow(Adw.ApplicationWindow):
             if not self.KEY_LOCATION.exists():
                 self.display_dialog("Please activate Voucher first", "This application hasn't been activated yet.")
             else:
-                self.aqr_identify(api_addr, queries["s"][0])
-                sleep(10)
-                self.aqr_authenticate(api_addr, queries["s"][0])
+                self.current_request = (api_addr, queries["s"][0])
+                self.aqr_identify(*self.current_request)
+                self.main_nav_view.push(self.confirmation_page)
