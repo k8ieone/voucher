@@ -76,12 +76,12 @@ class VoucherWindow(Adw.ApplicationWindow):
         private_key = Ed25519PrivateKey.generate()
         # Prepare the registration request with the associated public key
         public_key = private_key.public_key()
-        public_key_pem = public_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        public_key_bytes = public_key.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw
         )
-        public_pem_str = public_key_pem.decode('utf-8')
-        body = {"pubkey": public_pem_str}
+        public_b64_str = base64.b64encode(public_key_bytes).decode('utf-8')
+        body = {"pubkey": public_b64_str}
         headers = {"x-registration-token": token}
         # Send the registration request
         r = requests.post(api_addr + "/mobile/register", json=body, headers=headers)
@@ -121,6 +121,8 @@ class VoucherWindow(Adw.ApplicationWindow):
         r = requests.post(api_addr + "/mobile/aqr/identify", json=body, params=params)
         if r.status_code != 200:
             self.display_dialog("Request failed", r.text)
+        else:
+            self.main_nav_view.push(self.confirmation_page)
 
 
     def aqr_accept(self, widget):
@@ -179,4 +181,3 @@ class VoucherWindow(Adw.ApplicationWindow):
             else:
                 self.current_request = (api_addr, queries["s"][0])
                 self.aqr_identify(*self.current_request)
-                self.main_nav_view.push(self.confirmation_page)
