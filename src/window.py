@@ -139,7 +139,7 @@ class VoucherWindow(Adw.ApplicationWindow):
 
     def aqr_authenticate(self, action):
         api_addr, session = self.current_request
-        message = str(uuid4())
+        message = "{} {}".format(action, str(uuid4()))
         signature = self.sign_message(message)
         body = {"signature": signature, "message": message, "state": action}
         params = {"session": session}
@@ -152,6 +152,8 @@ class VoucherWindow(Adw.ApplicationWindow):
                 d.add_response(id="ok", label="Awesome!")
                 d.connect("closed", self.pop_confirmation_page)
                 d.present(parent=self)
+            elif action == "rejected":
+                self.main_nav_view.pop()
 
 
     def extract_base_path(self, addr):
