@@ -47,7 +47,7 @@ class VoucherApplication(Adw.Application):
         win = self.props.active_window
         if not win:
             win = VoucherWindow(application=self)
-            win.present()
+        win.present()
 
     def do_startup(self):
         Adw.Application.do_startup(self)
