@@ -50,7 +50,6 @@ class VoucherWindow(Adw.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.KEY_LOCATION = user_data_path("voucher") / "key.pem"
-        print(self.spinner_dialog.)
         if not user_data_path("voucher").exists():
             user_data_path("voucher").mkdir()
         if self.KEY_LOCATION.exists():
