@@ -19,19 +19,21 @@
 
 from gi.repository import Adw
 from gi.repository import Gtk
+from gi.repository import Gio
 
 from platformdirs import user_data_path
 from urllib.parse import uses_params, urlparse, parse_qs
 from pathlib import Path
 from uuid import uuid4
-# TODO: Get rid of sleep
-from time import sleep
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
 import base64
 import requests
+from requests.exceptions import HTTPError
+
+TASK_DATA = {}
 
 @Gtk.Template(resource_path='/one/k8ie/Voucher/window.ui')
 class VoucherWindow(Adw.ApplicationWindow):
@@ -43,16 +45,18 @@ class VoucherWindow(Adw.ApplicationWindow):
     confirmation_page = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
     reject_button = Gtk.Template.Child()
+    spinner_dialog = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.KEY_LOCATION = user_data_path("voucher") / "key.pem"
+        print(self.spinner_dialog.)
         if not user_data_path("voucher").exists():
             user_data_path("voucher").mkdir()
         if self.KEY_LOCATION.exists():
-            self.after_activation()
+            self.after_device_registered()
 
-    def after_activation(self):
+    def after_device_registered(self):
         self.main_status.set_title("Voucher is ready")
         self.main_status.set_description("Scan a Quorra login code to sign in")
         self.main_status.set_child(None)
@@ -70,6 +74,96 @@ class VoucherWindow(Adw.ApplicationWindow):
         d.present(parent=self)
 
 
+    # Looooots of copy-paste. Dunno how else to handle the logic here.
+    def finish_registration(self, window, task, whatevs):
+        """Callback - function called after a registration request finishes"""
+        task_data = TASK_DATA[task.get_task_data()]
+        self.spinner_dialog.force_close()
+        if task.propagate_boolean():
+            self.display_dialog("Activation successful", "This device has been successfully activated!")
+            self.after_device_registered()
+        else:
+            self.display_dialog("Activation failed", task_data["result"]["data"])
+            # Ugly workaround - the key is always saved but deleted when the registration fails
+            self.KEY_LOCATION.unlink(missing_ok=True)
+        # Cleanup
+        del TASK_DATA[task.get_task_data()]
+
+    def finish_identify(self, window, task, whatevs):
+        """Callback - function called after an identify request finishes"""
+        task_data = TASK_DATA[task.get_task_data()]
+        self.spinner_dialog.force_close()
+        if task.propagate_boolean():
+            self.main_nav_view.push(self.confirmation_page)
+        else:
+            self.display_dialog("Request failed", task_data["result"]["data"])
+        # Cleanup
+        del TASK_DATA[task.get_task_data()]
+
+    def finish_authenticate_accept(self, window, task, whatevs):
+        """Callback - function called after an authenticate request finishes"""
+        task_data = TASK_DATA[task.get_task_data()]
+        self.spinner_dialog.force_close()
+        if task.propagate_boolean():
+            d = Adw.AlertDialog(heading="Session authorized")
+            d.add_response(id="ok", label="Awesome!")
+            d.connect("closed", self.pop_confirmation_page)
+            d.present(parent=self)
+        else:
+            self.display_dialog("Request failed", task_data["result"]["data"])
+        # Cleanup
+        del TASK_DATA[task.get_task_data()]
+
+    def finish_authenticate_reject(self, window, task, whatevs):
+        """Callback - function called after an authenticate request finishes"""
+        task_data = TASK_DATA[task.get_task_data()]
+        self.spinner_dialog.force_close()
+        if task.propagate_boolean():
+            self.main_nav_view.pop()
+        else:
+            self.display_dialog("Request failed", task_data["result"]["data"])
+        # Cleanup
+        del TASK_DATA[task.get_task_data()]
+
+    def threaded_request(self, callback, method, address, body={}, headers={}, params={}):
+        """Starts a request in a thread."""
+        task = Gio.Task.new(self, Gio.Cancellable(), callback, None)
+        task.set_return_on_cancel(False)
+        task.run_in_thread(self._task_internal_method)
+        task_data = {"method": method, "address": address, "body": body, "headers": headers, "params": params}
+        TASK_DATA[id(task_data)] = task_data
+        task.set_task_data(id(task_data))
+        return task
+
+    def _task_internal_method (self, task, source_object, task_data, cancellable):
+        """Called by threaded_request in a thread"""
+
+        if task.return_error_if_cancelled():
+            task.return_value(None)
+
+        # Task data is just an id of the actual data. So, we need to get
+        # the actual data from our instance-wide dictionary
+        task_data = TASK_DATA[task.get_task_data()]
+        method = task_data["method"]
+        address = task_data["address"]
+        body = task_data["body"]
+        headers = task_data["headers"]
+        params = task_data["params"]
+        match method:
+            case "post":
+                r = requests.post(address, json=body, headers=headers, params=params)
+            case "get":
+                r = requests.get(address, json=body, headers=headers, params=params)
+        result = {"status": r.status_code, "data": r.text}
+        TASK_DATA[task.get_task_data()]["result"] = result
+        try:
+            r.raise_for_status()
+        except HTTPError:
+            task.return_boolean(False)
+        else:
+            task.return_boolean(True)
+
+
     def device_registration(self, api_addr, token):
         device_name = None
         # First generate a private key
@@ -81,22 +175,18 @@ class VoucherWindow(Adw.ApplicationWindow):
             format=serialization.PublicFormat.Raw
         )
         public_b64_str = base64.b64encode(public_key_bytes).decode('utf-8')
+        # Save to a file for now
+        with open(self.KEY_LOCATION, "wb") as f:
+            f.write(private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            ))
         body = {"pubkey": public_b64_str}
         headers = {"x-registration-token": token}
         # Send the registration request
-        r = requests.post(api_addr + "/mobile/register", json=body, headers=headers)
-        if r.status_code == 201:
-            self.display_dialog("Activation successful", "This device has been successfully activated!")
-            # Save the private key to a file
-            with open(self.KEY_LOCATION, "wb") as f:
-                f.write(private_key.private_bytes(
-                    encoding=serialization.Encoding.PEM,
-                    format=serialization.PrivateFormat.PKCS8,
-                    encryption_algorithm=serialization.NoEncryption()
-                ))
-            self.after_activation()
-        else:
-            self.display_dialog("Activation failed", r.text)
+        self.spinner_dialog.present(parent=self)
+        self.threaded_request(self.finish_registration, "post", api_addr + "/mobile/register", body=body, headers=headers)
 
 
     def sign_message(self, message):
@@ -118,11 +208,8 @@ class VoucherWindow(Adw.ApplicationWindow):
         signature = self.sign_message(message)
         body = {"signature": signature, "message": message}
         params = {"session": session}
-        r = requests.post(api_addr + "/mobile/aqr/identify", json=body, params=params)
-        if r.status_code != 200:
-            self.display_dialog("Request failed", r.text)
-        else:
-            self.main_nav_view.push(self.confirmation_page)
+        self.spinner_dialog.present(parent=self)
+        self.threaded_request(self.finish_identify, "post", api_addr + "/mobile/aqr/identify", body=body, params=params)
 
 
     def aqr_accept(self, widget):
@@ -143,17 +230,12 @@ class VoucherWindow(Adw.ApplicationWindow):
         signature = self.sign_message(message)
         body = {"signature": signature, "message": message, "state": action}
         params = {"session": session}
-        r = requests.post(api_addr + "/mobile/aqr/authenticate", json=body, params=params)
-        if r.status_code != 200:
-            self.display_dialog("Request failed", r.text)
-        else:
-            if action == "accepted":
-                d = Adw.AlertDialog(heading="Session authorized")
-                d.add_response(id="ok", label="Awesome!")
-                d.connect("closed", self.pop_confirmation_page)
-                d.present(parent=self)
-            elif action == "rejected":
-                self.main_nav_view.pop()
+        self.spinner_dialog.present(parent=self)
+        match action:
+            case "accepted":
+                self.threaded_request(self.finish_authenticate_accept, "post", api_addr + "/mobile/aqr/authenticate", body=body, params=params)
+            case "rejected":
+                self.threaded_request(self.finish_authenticate_reject, "post", api_addr + "/mobile/aqr/authenticate", body=body, params=params)
 
 
     def extract_base_path(self, addr):
