@@ -38,7 +38,7 @@ TASK_DATA = {}
 @Gtk.Template(resource_path='/one/k8ie/Voucher/window.ui')
 class VoucherWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'VoucherWindow'
-    uses_params = ['', 'quorra+http', 'quorra+https']
+    uses_params = ['', 'lightning']
     manual_activation_button = Gtk.Template.Child()
     main_status = Gtk.Template.Child()
     main_nav_view = Gtk.Template.Child()
