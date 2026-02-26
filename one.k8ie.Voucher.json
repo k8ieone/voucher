@@ -47,7 +47,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/k8ieone/voucher",
-                    "tag" : "main"
+                    "tag" : "lnurl-auth"
                 }
             ]
         }
