@@ -1,7 +1,7 @@
 {
     "id" : "one.k8ie.Voucher",
     "runtime" : "org.gnome.Platform",
-    "runtime-version" : "48",
+    "runtime-version" : "49",
     "sdk" : "org.gnome.Sdk",
     "sdk-extensions" : [
         "org.freedesktop.Sdk.Extension.rust-stable"
@@ -33,20 +33,6 @@
         "flatpak-deps/python3-maturin.json",
         "flatpak-deps/python3-cffi.json",
         "flatpak-deps/python3-cryptography.json",
-        {
-            "name": "blueprint-compiler",
-            "buildsystem": "meson",
-            "cleanup": [
-                "*"
-            ],
-            "sources": [
-                {
-                    "type": "git",
-                    "url": "https://gitlab.gnome.org/GNOME/blueprint-compiler",
-                    "tag": "v0.16.0"
-                }
-            ]
-        },
         {
             "name" : "voucher",
             "builddir" : true,

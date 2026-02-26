@@ -6,17 +6,17 @@
     ],
     "build-options": {
         "append-path" : "/usr/lib/sdk/rust-stable/bin",
-    	"env": {
-    		"MATURIN_NO_INSTALL_RUST": "true",
-    		"CARGO_HOME": "/run/build/python3-maturin/cargo"
-    	}
+        "env": {
+            "MATURIN_NO_INSTALL_RUST": "true",
+            "CARGO_HOME": "/run/build/python3-maturin/cargo"
+       }
     },
     "sources": [
         "cargo-maturin-sources.json",
         {
             "type": "file",
-            "url": "https://files.pythonhosted.org/packages/e0/23/bc3cfe0537e82a9f6d5aeef79066df5179c27e64bb536917d7b3fcec1232/maturin-1.8.4.tar.gz",
-            "sha256": "abe251545c3bf172b9514460d46ba22eaf2ca6c4310f7b06cebf69b4d365e4f7"
+            "url": "https://files.pythonhosted.org/packages/2f/a6/54e73f0ec0224488ae25196ce8b4df298cae613b099ad0c4f39dd7e3a8d2/maturin-1.12.4.tar.gz",
+            "sha256": "06f6438be7e723aaf4b412fb34839854b540a1350f7614fadf5bd1db2b98d5f7"
         }
     ]
 }
