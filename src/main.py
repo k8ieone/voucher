@@ -37,6 +37,7 @@ class VoucherApplication(Adw.Application):
         self.create_action('quit', lambda *_: self.quit(), ['<primary>q'])
         self.create_action('about', self.on_about_action)
         self.create_action('preferences', self.on_preferences_action)
+        self.settings = Gio.Settings.new("one.k8ie.Voucher")
 
     def do_activate(self):
         """Called when the application is activated.
@@ -65,7 +66,7 @@ class VoucherApplication(Adw.Application):
                                 developer_name='Kateřina Medvědová',
                                 version='0.1.0',
                                 developers=['Kateřina Medvědová'],
-                                copyright='© 2025 ',
+                                copyright='© 2026 ',
                                 license_type=Gtk.License(3))
         about.present(self.props.active_window)
 

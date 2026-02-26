@@ -21,15 +21,30 @@ from gi.repository import Adw
 from gi.repository import Gtk
 from gi.repository import Gio
 
-from platformdirs import user_data_path
 from urllib.parse import uses_params, urlparse, parse_qs
-from pathlib import Path
-from uuid import uuid4
 
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives import serialization
+import bech32
+import keyring
 
-import base64
+import hmac
+import hashlib
+from mnemonic import Mnemonic
+import bip32utils
+
+from cryptography.hazmat.primitives.asymmetric.ec import (
+    SECP256K1,
+    ECDSA,
+    derive_private_key,
+    EllipticCurvePrivateKey,
+)
+from cryptography.hazmat.primitives.asymmetric.utils import (
+    Prehashed,
+    decode_dss_signature,
+    encode_dss_signature
+)
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.backends import default_backend
+
 import requests
 from requests.exceptions import HTTPError
 
@@ -38,7 +53,7 @@ TASK_DATA = {}
 @Gtk.Template(resource_path='/one/k8ie/Voucher/window.ui')
 class VoucherWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'VoucherWindow'
-    uses_params = ['', 'lightning']
+    uses_params.append('lightning')
     manual_activation_button = Gtk.Template.Child()
     main_status = Gtk.Template.Child()
     main_nav_view = Gtk.Template.Child()
@@ -49,18 +64,26 @@ class VoucherWindow(Adw.ApplicationWindow):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.KEY_LOCATION = user_data_path("voucher") / "key.pem"
-        if not user_data_path("voucher").exists():
-            user_data_path("voucher").mkdir()
-        if self.KEY_LOCATION.exists():
-            self.after_device_registered()
+        self.settings = self.get_application().settings
+        identities = self.settings.get_strv("identities")
+        if len(identities) == 0:
+            self.generate_key("key 1")
+        print(self.settings.get_strv("identities"))
+        print(keyring.get_password("Voucher", "key 1"))
+        self.setup_buttons()
+        # if keyring.get_credential("Voucher", "test") is None:
+        #     keyring.set_password("Voucher", "test", "whatever")
+        #     self.after_device_registered()
+        # print(keyring.get_password("Voucher", "test"))
+        # else:
+        #     self.generate_key()
 
-    def after_device_registered(self):
-        self.main_status.set_title("Voucher is ready")
-        self.main_status.set_description("Scan a Quorra login code to sign in")
-        self.main_status.set_child(None)
-        self.confirm_button.connect("clicked", self.aqr_accept)
-        self.reject_button.connect("clicked", self.aqr_reject)
+    def setup_buttons(self):
+        # self.main_status.set_title("Voucher is ready")
+        # self.main_status.set_description("Scan a Quorra login code to sign in")
+        # self.main_status.set_child(None)
+        self.confirm_button.connect("clicked", self.authenticate)
+        self.reject_button.connect("clicked", self.canclel_authenticate)
 
 
     def display_dialog(self, message, text=None):
@@ -73,21 +96,6 @@ class VoucherWindow(Adw.ApplicationWindow):
         d.present(parent=self)
 
 
-    # Looooots of copy-paste. Dunno how else to handle the logic here.
-    def finish_registration(self, window, task, whatevs):
-        """Callback - function called after a registration request finishes"""
-        task_data = TASK_DATA[task.get_task_data()]
-        self.spinner_dialog.force_close()
-        if task.propagate_boolean():
-            self.display_dialog("Activation successful", "This device has been successfully activated!")
-            self.after_device_registered()
-        else:
-            self.display_dialog("Activation failed", task_data["result"]["data"])
-            # Ugly workaround - the key is always saved but deleted when the registration fails
-            self.KEY_LOCATION.unlink(missing_ok=True)
-        # Cleanup
-        del TASK_DATA[task.get_task_data()]
-
     def finish_identify(self, window, task, whatevs):
         """Callback - function called after an identify request finishes"""
         task_data = TASK_DATA[task.get_task_data()]
@@ -99,7 +107,7 @@ class VoucherWindow(Adw.ApplicationWindow):
         # Cleanup
         del TASK_DATA[task.get_task_data()]
 
-    def finish_authenticate_accept(self, window, task, whatevs):
+    def finish_authenticate_request(self, window, task, whatevs):
         """Callback - function called after an authenticate request finishes"""
         task_data = TASK_DATA[task.get_task_data()]
         self.spinner_dialog.force_close()
@@ -108,17 +116,6 @@ class VoucherWindow(Adw.ApplicationWindow):
             d.add_response(id="ok", label="Awesome!")
             d.connect("closed", self.pop_confirmation_page)
             d.present(parent=self)
-        else:
-            self.display_dialog("Request failed", task_data["result"]["data"])
-        # Cleanup
-        del TASK_DATA[task.get_task_data()]
-
-    def finish_authenticate_reject(self, window, task, whatevs):
-        """Callback - function called after an authenticate request finishes"""
-        task_data = TASK_DATA[task.get_task_data()]
-        self.spinner_dialog.force_close()
-        if task.propagate_boolean():
-            self.main_nav_view.pop()
         else:
             self.display_dialog("Request failed", task_data["result"]["data"])
         # Cleanup
@@ -163,104 +160,137 @@ class VoucherWindow(Adw.ApplicationWindow):
             task.return_boolean(True)
 
 
-    def device_registration(self, api_addr, token):
-        device_name = None
-        # First generate a private key
-        private_key = Ed25519PrivateKey.generate()
-        # Prepare the registration request with the associated public key
-        public_key = private_key.public_key()
-        public_key_bytes = public_key.public_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PublicFormat.Raw
-        )
-        public_b64_str = base64.b64encode(public_key_bytes).decode('utf-8')
-        # Save to a file for now
-        with open(self.KEY_LOCATION, "wb") as f:
-            f.write(private_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption()
-            ))
-        body = {"pubkey": public_b64_str}
-        headers = {"x-registration-token": token}
-        # Send the registration request
-        self.spinner_dialog.present(parent=self)
-        self.threaded_request(self.finish_registration, "post", api_addr + "/mobile/register", body=body, headers=headers)
+    def identify(self):
+        print("TODO: Identify")
+        # action = "identify"
+        # message = "{} {}".format(action, str(uuid4()))
+        # signature = self.sign_message(message)
+        # body = {"signature": signature, "message": message}
+        # params = {"session": session}
+        # self.spinner_dialog.present(parent=self)
+        # self.threaded_request(self.finish_identify, "post", api_addr + "/mobile/aqr/identify", body=body, params=params)
 
 
-    def sign_message(self, message):
-        with open(self.KEY_LOCATION, "rb") as f:
-            private_key = serialization.load_pem_private_key(
-                f.read(),
-                password=None
-            )
-        # Signing requires binary data
-        signature = private_key.sign(message.encode('utf-8'))
-        # Resulting signature is also binary data which we can't send in JSON
-        # so we base64-encode the signature data first
-        return base64.b64encode(signature).decode('utf-8')
-
-
-    def aqr_identify(self, api_addr, session):
-        action = "identify"
-        message = "{} {}".format(action, str(uuid4()))
-        signature = self.sign_message(message)
-        body = {"signature": signature, "message": message}
-        params = {"session": session}
-        self.spinner_dialog.present(parent=self)
-        self.threaded_request(self.finish_identify, "post", api_addr + "/mobile/aqr/identify", body=body, params=params)
-
-
-    def aqr_accept(self, widget):
-        self.aqr_authenticate("accepted")
-
-
-    def aqr_reject(self, widget):
-        self.aqr_authenticate("rejected")
+    def canclel_authenticate(self, widget):
+        # self.authenticate("rejected")
+        self.main_nav_view.pop()
 
 
     def pop_confirmation_page(self, widget):
         self.main_nav_view.pop()
 
 
-    def aqr_authenticate(self, action):
-        api_addr, session = self.current_request
-        message = "{} {}".format(action, str(uuid4()))
-        signature = self.sign_message(message)
-        body = {"signature": signature, "message": message, "state": action}
-        params = {"session": session}
+    def authenticate(self, widget):
+        # I really don't like that we're using a window-wide object property to store the request data
+        # on the other hand, why not
+        queries = parse_qs(self.current_request.query)
+        api_path = self.current_request.scheme + "://" + self.current_request.netloc + self.current_request.path
+        signature, pub_key_hex = self.sign_k1(queries["k1"][0], self.current_request.hostname)
+        params = {}
+        for key, value in queries.items():
+            params[key] = value[0]
+        params["sig"] = signature
+        params["key"] = pub_key_hex
+        print(params)
         self.spinner_dialog.present(parent=self)
-        match action:
-            case "accepted":
-                self.threaded_request(self.finish_authenticate_accept, "post", api_addr + "/mobile/aqr/authenticate", body=body, params=params)
-            case "rejected":
-                self.threaded_request(self.finish_authenticate_reject, "post", api_addr + "/mobile/aqr/authenticate", body=body, params=params)
+        self.threaded_request(self.finish_authenticate_request, "get", api_path, params=params)
 
 
-    def extract_base_path(self, addr):
-        marker = "/mobile/"
-        idx = addr.find(marker)
-        base_path = addr[:idx]
-        return base_path
+    def generate_key(self, name: str) -> None:
+        mnemo = Mnemonic("english").generate(strength=256)
+        keyring.set_password("Voucher", name, mnemo)
+        # TODO: Don't overwrite the whole list
+        self.settings.set_strv("identities", [name])
+
+
+    def derive_lnurl_master_key(self, name: str) -> bytes:
+        """
+        Derive the LNURL-auth master key from a BIP-39 mnemonic.
+        Uses BIP-32 derivation path m/138'/0 as per the LNURL-auth spec.
+        """
+        seed = Mnemonic.to_seed(keyring.get_password("Voucher", name))
+
+        # Derive the root key from the seed
+        root_key = bip32utils.BIP32Key.fromEntropy(seed)
+
+        # Derive m/138'/0 (138' is hardened, as per LNURL-auth spec)
+        lnurl_master = root_key.ChildKey(138 + bip32utils.BIP32_HARDEN).ChildKey(0)
+
+        return lnurl_master.PrivateKey()
+
+
+    def derive_domain_key(self, master_key: bytes, domain: str) -> EllipticCurvePrivateKey:
+        """
+        Derive a domain-specific private key using HMAC-SHA256.
+        The master key is the HMAC secret, the domain is the message.
+        The resulting 32 bytes are used directly as a SECP256K1 private key.
+        """
+        domain_key_bytes = hmac.new(
+            key=master_key,
+            msg=domain.encode("utf-8"),
+            digestmod=hashlib.sha256,
+        ).digest()
+
+        # Convert the 32 raw bytes into a SECP256K1 private key
+        private_key = derive_private_key(
+            int.from_bytes(domain_key_bytes, byteorder="big"),
+            SECP256K1(),
+            default_backend(),
+        )
+
+        return private_key
+
+
+    def get_public_key_hex(self, private_key: EllipticCurvePrivateKey) -> str:
+        """Get the compressed public key in hex (this is your linking key for the domain)."""
+        public_key = private_key.public_key()
+        return public_key.public_bytes(
+            encoding=serialization.Encoding.X962,
+            format=serialization.PublicFormat.CompressedPoint,
+        ).hex()
+
+
+    def der_to_low_s_der(self, der_sig: bytes) -> bytes:
+        """
+        Convert a DER-encoded signature to a 64-byte compact signature.
+        Each of r and s is zero-padded to 32 bytes.
+        """
+        SECP256K1_N = int("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
+        SECP256K1_HALF_N = SECP256K1_N // 2
+        r, s = decode_dss_signature(der_sig)
+        if s > SECP256K1_HALF_N:
+            s = SECP256K1_N - s
+        return encode_dss_signature(r, s)
+
+    def sign_k1(self, k1_hex: str, domain: str) -> str:
+        """
+        Sign the k1 challenge provided by the LNURL-auth service.
+        k1 is a 32-byte hex string provided by the service.
+        Returns the DER-encoded signature as hex.
+        """
+        master_key = self.derive_lnurl_master_key("key 1")
+        domain_key = self.derive_domain_key(master_key, domain)
+        pub_key_hex = self.get_public_key_hex(domain_key)
+
+        k1_bytes = bytes.fromhex(k1_hex)
+        signature = domain_key.sign(k1_bytes, ECDSA(Prehashed(hashes.SHA256())))
+        signature_tweaked = self.der_to_low_s_der(signature)
+        return (signature_tweaked.hex(), pub_key_hex)
 
 
     def handle_uri(self, uri):
-        parsed = urlparse(uri)
-        scheme = "http://"
-        if parsed.scheme == "quorra+https":
-            scheme = "https://"
+        # TODO: Error handling for invalid URLs
+        ln_parsed = urlparse(uri)
+        # TODO: Don't hard-code lnurl?
+        # TODO: Check for decoding errors
+        lnurl_decoded = bech32.decode_bytes("lnurl", ln_parsed.path).decode("utf-8")
+        parsed = urlparse(lnurl_decoded)
+        # scheme = "http://"
+        # if parsed.scheme == "quorra+https":
+        #     scheme = "https://"
         queries = parse_qs(parsed.query)
-        last_segment = parsed.path.split("/")[-1]
-        base_path = self.extract_base_path(parsed.path)
-        api_addr = scheme + parsed.netloc + base_path
-        if last_segment == "register":
-            if self.KEY_LOCATION.exists():
-                self.display_dialog("Voucher is already active", "More than one activation is not supported.")
-            else:
-                self.device_registration(api_addr, queries["t"][0])
-        if last_segment == "login":
-            if not self.KEY_LOCATION.exists():
-                self.display_dialog("Please activate Voucher first", "This application hasn't been activated yet.")
-            else:
-                self.current_request = (api_addr, queries["s"][0])
-                self.aqr_identify(*self.current_request)
+        if "k1" in queries.keys() and "tag" in queries.keys() and queries["tag"] == ["login"]:
+            # TODO: Only call identify when talking to Quorra
+            self.current_request = (parsed)
+            self.identify()
+            self.main_nav_view.push(self.confirmation_page)

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="voucher">
-	<schema id="one.k8ie.Voucher" path="/one/k8ie/Voucher/">
-	</schema>
+  <schema id="one.k8ie.Voucher" path="/one/k8ie/Voucher/">
+    <key name="identities" type="as">
+      <default>[]</default>
+      <summary>Available identities</summary>
+      <description>List of available Voucher identities</description>
+    </key>
+  </schema>
 </schemalist>
