@@ -29,6 +29,8 @@
         "flatpak-deps/python3-requests.json",
         "flatpak-deps/python3-platformdirs.json",
 
+        "flatpak-deps/python3-bech32.json",
+
         "flatpak-deps/python3-setuptools_rust.json",
         "flatpak-deps/python3-maturin.json",
         "flatpak-deps/python3-cffi.json",
