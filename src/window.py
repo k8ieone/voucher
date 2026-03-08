@@ -285,6 +285,7 @@ class VoucherWindow(Adw.ApplicationWindow):
         # TODO: Check for decoding errors
         lnurl_decoded = bech32.decode_bytes("lnurl", ln_parsed.path).decode("utf-8")
         parsed = urlparse(lnurl_decoded)
+        print(parsed)
         # scheme = "http://"
         # if parsed.scheme == "quorra+https":
         #     scheme = "https://"
