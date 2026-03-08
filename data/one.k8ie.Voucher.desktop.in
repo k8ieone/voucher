@@ -9,4 +9,4 @@ Keywords=Quorra;
 StartupNotify=true
 DBusActivatable=true
 X-Purism-FormFactor=Workstation;Mobile;
-MimeType=x-scheme-handler/quorra+http;x-scheme-handler/quorra+https;
+MimeType=x-scheme-handler/lightning;

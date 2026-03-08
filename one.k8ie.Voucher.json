@@ -12,7 +12,8 @@
         "--share=ipc",
         "--socket=fallback-x11",
         "--device=dri",
-        "--socket=wayland"
+        "--socket=wayland",
+        "--talk-name=org.freedesktop.secrets"
     ],
     "cleanup" : [
         "/include",
@@ -27,12 +28,17 @@
     ],
     "modules" : [
         "flatpak-deps/python3-requests.json",
-        "flatpak-deps/python3-platformdirs.json",
+
+        "flatpak-deps/python3-bech32.json",
+        "flatpak-deps/python3-bip32utils.json",
+        "flatpak-deps/python3-mnemonic.json",
 
         "flatpak-deps/python3-setuptools_rust.json",
         "flatpak-deps/python3-maturin.json",
         "flatpak-deps/python3-cffi.json",
         "flatpak-deps/python3-cryptography.json",
+
+        "flatpak-deps/python3-keyring.json",
         {
             "name" : "voucher",
             "builddir" : true,
@@ -41,7 +47,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/k8ieone/voucher",
-                    "tag" : "main"
+                    "tag" : "lnurl-auth"
                 }
             ]
         }
