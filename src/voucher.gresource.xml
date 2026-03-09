@@ -2,6 +2,10 @@
 <gresources>
   <gresource prefix="/one/k8ie/Voucher">
     <file preprocess="xml-stripblanks">window.ui</file>
-    <file preprocess="xml-stripblanks">gtk/help-overlay.ui</file>
+    <file preprocess="xml-stripblanks">shortcuts-dialog.ui</file>
+    <file preprocess="xml-stripblanks">widgets/menu-button.ui</file>
+    <file preprocess="xml-stripblanks">pages/keys.ui</file>
+    <file preprocess="xml-stripblanks">pages/sites.ui</file>
+    <file preprocess="xml-stripblanks">pages/status.ui</file>
   </gresource>
 </gresources>

@@ -40,7 +40,9 @@ if __name__ == '__main__':
 
     from gi.repository import Gio
     resource = Gio.Resource.load(os.path.join(pkgdatadir, 'voucher.gresource'))
+    data_resource = Gio.Resource.load(os.path.join(pkgdatadir, 'data.gresource'))
     resource._register()
+    data_resource._register()
 
     from voucher import main
     sys.exit(main.main(VERSION))

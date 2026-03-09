@@ -4,7 +4,11 @@ gnome = import('gnome')
 blueprints = custom_target('blueprints',
   input: files(
     'window.blp',
-    'gtk/help-overlay.blp',
+    'shortcuts-dialog.blp',
+    'widgets/menu-button.blp',
+    'pages/keys.blp',
+    'pages/sites.blp',
+    'pages/status.blp'
   ),
   output: '.',
   command: [find_program('blueprint-compiler'), 'batch-compile', '@OUTPUT@', '@CURRENT_SOURCE_DIR@', '@INPUT@'],
@@ -39,6 +43,10 @@ voucher_sources = [
   '__init__.py',
   'main.py',
   'window.py',
+  'widgets/menu_button.py',
+  'pages/keys.py',
+  'pages/sites.py',
+  'pages/status.py'
 ]
 
 install_data(voucher_sources, install_dir: moduledir)

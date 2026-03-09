@@ -20,6 +20,15 @@ appstream_file = i18n.merge_file(
   install_dir: get_option('datadir') / 'metainfo'
 )
 
+gnome = import('gnome')
+gnome.compile_resources(
+  'data',
+  'data.gresource.xml',
+  gresource_bundle: true,
+  install: true,
+  install_dir: get_option('prefix') / get_option('datadir') / meson.project_name(),
+)
+
 appstreamcli = find_program('appstreamcli', required: false, disabler: true)
 test('Validate appstream file', appstreamcli,
      args: ['validate', '--no-net', '--explain', appstream_file])

@@ -48,15 +48,19 @@ from cryptography.hazmat.backends import default_backend
 import requests
 from requests.exceptions import HTTPError
 
+from .menu_button import VoucherMenuButton
+from .keys import VoucherKeysTab
+from .sites import VoucherSitesTab
+from .status import VoucherStatusTab
+
 TASK_DATA = {}
 
 @Gtk.Template(resource_path='/one/k8ie/Voucher/window.ui')
 class VoucherWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'VoucherWindow'
     uses_params.append('lightning')
-    manual_activation_button = Gtk.Template.Child()
-    main_status = Gtk.Template.Child()
-    main_nav_view = Gtk.Template.Child()
+    #main_status = Gtk.Template.Child()
+    #main_nav_view = Gtk.Template.Child()
     confirmation_page = Gtk.Template.Child()
     confirm_button = Gtk.Template.Child()
     reject_button = Gtk.Template.Child()

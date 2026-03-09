@@ -5,37 +5,53 @@ template $VoucherWindow: Adw.ApplicationWindow {
   title: _("Voucher");
   default-width: 200;
   default-height: 600;
-  content: main_nav_view;
+  Adw.Breakpoint {
+    condition ("max-width: 550sp")
+    setters {
+      switcher_bar.reveal: true;
+      header_bar.title-widget: null;
+    }
+  }
+  content: main_view;
 }
 
+Adw.ToolbarView main_view {
+  [top]
+  Adw.HeaderBar header_bar {
+    [title]
+    Adw.ViewSwitcher switcher_title_widget {
+      policy: wide;
+      stack: stack;
+    }
+    [end]
+    $VoucherMenuButton {}
+  }
+  content: stack;
+  [bottom]
+  Adw.ViewSwitcherBar switcher_bar {
+    stack: stack;
+  }
+}
 
-Adw.NavigationView main_nav_view {
-  Adw.NavigationPage {
-    title: "Voucher";
-    child: Adw.ToolbarView {
-      [top]
-      Adw.HeaderBar {
-        [end]
-        Gtk.MenuButton {
-          primary: true;
-          icon-name: "open-menu-symbolic";
-          tooltip-text: _("Menu");
-          menu-model: primary_menu;
-        }
-      }
-      content: Adw.StatusPage main_status {
-        title: "Activate Voucher";
-        description: "Start by scanning a Quorra activation code in your camera app";
-        child: Adw.Clamp {
-          maximum-size: 250;
-          child: Gtk.Button manual_activation_button {
-            styles ["pill"]
-            label: "Activate manually";
-            action-name: "win.start";
-          };
-        };
-      };
-    };
+Adw.ViewStack stack {
+  enable-transitions: true;
+  Adw.ViewStackPage {
+    name: "status";
+    title: "Status";
+    icon-name: "test-pass-symbolic";
+    child: $VoucherStatusTab {};
+  }
+  Adw.ViewStackPage {
+    name: "keys";
+    title: "Keys";
+    icon-name: "dialog-password-symbolic";
+    child: $VoucherKeysTab {};
+  }
+  Adw.ViewStackPage {
+    name: "sites";
+    title: "Sites";
+    icon-name: "globe-symbolic";
+    child: $VoucherSitesTab {};
   }
 }
 
@@ -70,24 +86,4 @@ Adw.AlertDialog spinner_dialog {
   body: "Waiting for response";
   presentation-mode: auto;
   extra-child: Adw.Spinner {};
-}
-
-// Menu
-menu primary_menu {
-  section {
-    item {
-      label: _("_Preferences");
-      action: "app.preferences";
-    }
-
-    item {
-      label: _("_Keyboard Shortcuts");
-      action: "win.show-help-overlay";
-    }
-
-    item {
-      label: _("_About Voucher");
-      action: "app.about";
-    }
-  }
 }
