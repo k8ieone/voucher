@@ -40,6 +40,44 @@ from .lnutils import sign_k1
 
 TASK_DATA = {}
 
+def threaded_request(callback, method, address, body={}, headers={}, params={}):
+    """Starts a request in a thread."""
+    task = Gio.Task.new(None, Gio.Cancellable(), callback, None)
+    task.set_return_on_cancel(False)
+    task.run_in_thread(_task_internal_method)
+    task_data = {"method": method, "address": address, "body": body, "headers": headers, "params": params}
+    TASK_DATA[id(task_data)] = task_data
+    task.set_task_data(id(task_data))
+    return task
+
+def _task_internal_method (task, source_object, task_data, cancellable):
+    """Called by threaded_request in a thread"""
+
+    if task.return_error_if_cancelled():
+        task.return_value(None)
+
+    # Task data is just an id of the actual data. So, we need to get
+    # the actual data from our instance-wide dictionary
+    task_data = TASK_DATA[task.get_task_data()]
+    method = task_data["method"]
+    address = task_data["address"]
+    body = task_data["body"]
+    headers = task_data["headers"]
+    params = task_data["params"]
+    match method:
+        case "post":
+            r = requests.post(address, json=body, headers=headers, params=params)
+        case "get":
+            r = requests.get(address, json=body, headers=headers, params=params)
+    result = {"status": r.status_code, "data": r.text}
+    TASK_DATA[task.get_task_data()]["result"] = result
+    try:
+        r.raise_for_status()
+    except HTTPError:
+        task.return_boolean(False)
+    else:
+        task.return_boolean(True)
+
 @Gtk.Template(resource_path='/one/k8ie/Voucher/window.ui')
 class VoucherWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'VoucherWindow'
@@ -103,44 +141,6 @@ class VoucherWindow(Adw.ApplicationWindow):
         # Cleanup
         del TASK_DATA[task.get_task_data()]
 
-    def threaded_request(self, callback, method, address, body={}, headers={}, params={}):
-        """Starts a request in a thread."""
-        task = Gio.Task.new(self, Gio.Cancellable(), callback, None)
-        task.set_return_on_cancel(False)
-        task.run_in_thread(self._task_internal_method)
-        task_data = {"method": method, "address": address, "body": body, "headers": headers, "params": params}
-        TASK_DATA[id(task_data)] = task_data
-        task.set_task_data(id(task_data))
-        return task
-
-    def _task_internal_method (self, task, source_object, task_data, cancellable):
-        """Called by threaded_request in a thread"""
-
-        if task.return_error_if_cancelled():
-            task.return_value(None)
-
-        # Task data is just an id of the actual data. So, we need to get
-        # the actual data from our instance-wide dictionary
-        task_data = TASK_DATA[task.get_task_data()]
-        method = task_data["method"]
-        address = task_data["address"]
-        body = task_data["body"]
-        headers = task_data["headers"]
-        params = task_data["params"]
-        match method:
-            case "post":
-                r = requests.post(address, json=body, headers=headers, params=params)
-            case "get":
-                r = requests.get(address, json=body, headers=headers, params=params)
-        result = {"status": r.status_code, "data": r.text}
-        TASK_DATA[task.get_task_data()]["result"] = result
-        try:
-            r.raise_for_status()
-        except HTTPError:
-            task.return_boolean(False)
-        else:
-            task.return_boolean(True)
-
 
     def identify(self):
         print("TODO: Identify")
@@ -150,7 +150,7 @@ class VoucherWindow(Adw.ApplicationWindow):
         # body = {"signature": signature, "message": message}
         # params = {"session": session}
         # self.spinner_dialog.present(parent=self)
-        # self.threaded_request(self.finish_identify, "post", api_addr + "/mobile/aqr/identify", body=body, params=params)
+        # threaded_request(self.finish_identify, "post", api_addr + "/mobile/aqr/identify", body=body, params=params)
 
 
     def pop_confirmation_page(self, widget):
@@ -170,7 +170,7 @@ class VoucherWindow(Adw.ApplicationWindow):
         params["key"] = pub_key_hex
         print(params)
         self.spinner_dialog.present(parent=self)
-        self.threaded_request(self.finish_authenticate_request, "get", api_path, params=params)
+        threaded_request(self.finish_authenticate_request, "get", api_path, params=params)
 
 
     def handle_uri(self, uri):
