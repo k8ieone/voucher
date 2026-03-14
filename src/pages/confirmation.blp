@@ -1,0 +1,31 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $VoucherConfirmationPage: Adw.NavigationPage {
+  title: _("Confirmation");
+  tag: "confirmation";
+  child: Adw.ToolbarView {
+    [top]
+    Adw.HeaderBar {
+    }
+    content: Adw.StatusPage confirmation_status_page {
+      title: _("Confirm operation");
+      child: Adw.Clamp {
+        maximum-size: 250;
+        child: Gtk.Box {
+          orientation: vertical;
+          Gtk.Button confirm_button {
+            styles ["pill", "suggested-action"]
+            label: _("Confirm");
+            clicked => $on_confirm();
+          }
+          Gtk.Button reject_button {
+            styles ["pill"]
+            label: _("Cancel");
+            clicked => $on_cancel();
+          }
+        };
+      };
+    };
+  };
+}

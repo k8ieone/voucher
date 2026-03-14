@@ -6,6 +6,8 @@ blueprints = custom_target('blueprints',
     'window.blp',
     'shortcuts-dialog.blp',
     'widgets/menu-button.blp',
+    'widgets/spinner-dialog.blp',
+    'pages/confirmation.blp',
     'pages/keys.blp',
     'pages/sites.blp',
     'pages/status.blp'
@@ -41,9 +43,12 @@ configure_file(
 
 voucher_sources = [
   '__init__.py',
+  'lnutils.py',
   'main.py',
   'window.py',
   'widgets/menu_button.py',
+  'widgets/spinner_dialog.py',
+  'pages/confirmation.py',
   'pages/keys.py',
   'pages/sites.py',
   'pages/status.py'

@@ -26,25 +26,6 @@ from urllib.parse import uses_params, urlparse, parse_qs
 import bech32
 import keyring
 
-import hmac
-import hashlib
-from mnemonic import Mnemonic
-import bip32utils
-
-from cryptography.hazmat.primitives.asymmetric.ec import (
-    SECP256K1,
-    ECDSA,
-    derive_private_key,
-    EllipticCurvePrivateKey,
-)
-from cryptography.hazmat.primitives.asymmetric.utils import (
-    Prehashed,
-    decode_dss_signature,
-    encode_dss_signature
-)
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.backends import default_backend
-
 import requests
 from requests.exceptions import HTTPError
 
@@ -52,6 +33,10 @@ from .menu_button import VoucherMenuButton
 from .keys import VoucherKeysTab
 from .sites import VoucherSitesTab
 from .status import VoucherStatusTab
+from .confirmation import VoucherConfirmationPage
+from .spinner_dialog import VoucherSpinnerDialog
+
+from .lnutils import sign_k1
 
 TASK_DATA = {}
 
@@ -59,11 +44,7 @@ TASK_DATA = {}
 class VoucherWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'VoucherWindow'
     uses_params.append('lightning')
-    #main_status = Gtk.Template.Child()
-    #main_nav_view = Gtk.Template.Child()
-    confirmation_page = Gtk.Template.Child()
-    confirm_button = Gtk.Template.Child()
-    reject_button = Gtk.Template.Child()
+    main_view = Gtk.Template.Child()
     spinner_dialog = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
@@ -71,32 +52,29 @@ class VoucherWindow(Adw.ApplicationWindow):
         self.settings = self.get_application().settings
         identities = self.settings.get_strv("identities")
         if len(identities) == 0:
-            self.generate_key("key 1")
+            self.generate_key("key 1", self.settings)
         print(self.settings.get_strv("identities"))
         print(keyring.get_password("Voucher", "key 1"))
-        self.setup_buttons()
+        #self.setup_buttons()
         # if keyring.get_credential("Voucher", "test") is None:
         #     keyring.set_password("Voucher", "test", "whatever")
         #     self.after_device_registered()
         # print(keyring.get_password("Voucher", "test"))
         # else:
         #     self.generate_key()
-
-    def setup_buttons(self):
-        # self.main_status.set_title("Voucher is ready")
-        # self.main_status.set_description("Scan a Quorra login code to sign in")
-        # self.main_status.set_child(None)
-        self.confirm_button.connect("clicked", self.authenticate)
-        self.reject_button.connect("clicked", self.canclel_authenticate)
+        # test = VoucherConfirmationPage()
+        # self.main_view.push(test)
+        #self.display_dialog("hihjiifsf", "jaksdfjsalkfa", [{"id": "whatever", "label": "Whatever"}])
 
 
-    def display_dialog(self, message, text=None):
+    def display_dialog(self, message, text=None, responses=[{"id": "ok", "label": "Okay"}]):
         # Prevents a critical Adwaita warning
         if text is None:
             d = Adw.AlertDialog(heading=message)
         else:
             d = Adw.AlertDialog(heading=message, body=text)
-        d.add_response(id="ok", label="Awesome!")
+        for response in responses:
+            d.add_response(**response)
         d.present(parent=self)
 
 
@@ -175,21 +153,16 @@ class VoucherWindow(Adw.ApplicationWindow):
         # self.threaded_request(self.finish_identify, "post", api_addr + "/mobile/aqr/identify", body=body, params=params)
 
 
-    def canclel_authenticate(self, widget):
-        # self.authenticate("rejected")
-        self.main_nav_view.pop()
-
-
     def pop_confirmation_page(self, widget):
-        self.main_nav_view.pop()
+        self.main_view.pop()
 
 
-    def authenticate(self, widget):
+    def authenticate(self):
         # I really don't like that we're using a window-wide object property to store the request data
         # on the other hand, why not
         queries = parse_qs(self.current_request.query)
         api_path = self.current_request.scheme + "://" + self.current_request.netloc + self.current_request.path
-        signature, pub_key_hex = self.sign_k1(queries["k1"][0], self.current_request.hostname)
+        signature, pub_key_hex = sign_k1(queries["k1"][0], self.current_request.hostname)
         params = {}
         for key, value in queries.items():
             params[key] = value[0]
@@ -198,88 +171,6 @@ class VoucherWindow(Adw.ApplicationWindow):
         print(params)
         self.spinner_dialog.present(parent=self)
         self.threaded_request(self.finish_authenticate_request, "get", api_path, params=params)
-
-
-    def generate_key(self, name: str) -> None:
-        mnemo = Mnemonic("english").generate(strength=256)
-        keyring.set_password("Voucher", name, mnemo)
-        # TODO: Don't overwrite the whole list
-        self.settings.set_strv("identities", [name])
-
-
-    def derive_lnurl_master_key(self, name: str) -> bytes:
-        """
-        Derive the LNURL-auth master key from a BIP-39 mnemonic.
-        Uses BIP-32 derivation path m/138'/0 as per the LNURL-auth spec.
-        """
-        seed = Mnemonic.to_seed(keyring.get_password("Voucher", name))
-
-        # Derive the root key from the seed
-        root_key = bip32utils.BIP32Key.fromEntropy(seed)
-
-        # Derive m/138'/0 (138' is hardened, as per LNURL-auth spec)
-        lnurl_master = root_key.ChildKey(138 + bip32utils.BIP32_HARDEN).ChildKey(0)
-
-        return lnurl_master.PrivateKey()
-
-
-    def derive_domain_key(self, master_key: bytes, domain: str) -> EllipticCurvePrivateKey:
-        """
-        Derive a domain-specific private key using HMAC-SHA256.
-        The master key is the HMAC secret, the domain is the message.
-        The resulting 32 bytes are used directly as a SECP256K1 private key.
-        """
-        domain_key_bytes = hmac.new(
-            key=master_key,
-            msg=domain.encode("utf-8"),
-            digestmod=hashlib.sha256,
-        ).digest()
-
-        # Convert the 32 raw bytes into a SECP256K1 private key
-        private_key = derive_private_key(
-            int.from_bytes(domain_key_bytes, byteorder="big"),
-            SECP256K1(),
-            default_backend(),
-        )
-
-        return private_key
-
-
-    def get_public_key_hex(self, private_key: EllipticCurvePrivateKey) -> str:
-        """Get the compressed public key in hex (this is your linking key for the domain)."""
-        public_key = private_key.public_key()
-        return public_key.public_bytes(
-            encoding=serialization.Encoding.X962,
-            format=serialization.PublicFormat.CompressedPoint,
-        ).hex()
-
-
-    def der_to_low_s_der(self, der_sig: bytes) -> bytes:
-        """
-        Convert a DER-encoded signature to a 64-byte compact signature.
-        Each of r and s is zero-padded to 32 bytes.
-        """
-        SECP256K1_N = int("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
-        SECP256K1_HALF_N = SECP256K1_N // 2
-        r, s = decode_dss_signature(der_sig)
-        if s > SECP256K1_HALF_N:
-            s = SECP256K1_N - s
-        return encode_dss_signature(r, s)
-
-    def sign_k1(self, k1_hex: str, domain: str) -> str:
-        """
-        Sign the k1 challenge provided by the LNURL-auth service.
-        k1 is a 32-byte hex string provided by the service.
-        Returns the DER-encoded signature as hex.
-        """
-        master_key = self.derive_lnurl_master_key("key 1")
-        domain_key = self.derive_domain_key(master_key, domain)
-        pub_key_hex = self.get_public_key_hex(domain_key)
-
-        k1_bytes = bytes.fromhex(k1_hex)
-        signature = domain_key.sign(k1_bytes, ECDSA(Prehashed(hashes.SHA256())))
-        signature_tweaked = self.der_to_low_s_der(signature)
-        return (signature_tweaked.hex(), pub_key_hex)
 
 
     def handle_uri(self, uri):
@@ -298,4 +189,4 @@ class VoucherWindow(Adw.ApplicationWindow):
             # TODO: Only call identify when talking to Quorra
             self.current_request = (parsed)
             self.identify()
-            self.main_nav_view.push(self.confirmation_page)
+            self.main_view.push(VoucherConfirmationPage(address=parsed.hostname))

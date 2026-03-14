@@ -3,10 +3,10 @@ using Adw 1;
 
 template $VoucherWindow: Adw.ApplicationWindow {
   title: _("Voucher");
-  default-width: 200;
+  default-width: 800;
   default-height: 600;
   Adw.Breakpoint {
-    condition ("max-width: 550sp")
+    condition ("max-width: 500sp")
     setters {
       switcher_bar.reveal: true;
       header_bar.title-widget: null;
@@ -15,21 +15,26 @@ template $VoucherWindow: Adw.ApplicationWindow {
   content: main_view;
 }
 
-Adw.ToolbarView main_view {
-  [top]
-  Adw.HeaderBar header_bar {
-    [title]
-    Adw.ViewSwitcher switcher_title_widget {
-      policy: wide;
-      stack: stack;
-    }
-    [end]
-    $VoucherMenuButton {}
-  }
-  content: stack;
-  [bottom]
-  Adw.ViewSwitcherBar switcher_bar {
-    stack: stack;
+Adw.NavigationView main_view {
+  Adw.NavigationPage {
+    title: _("Voucher");
+    child: Adw.ToolbarView {
+      [top]
+      Adw.HeaderBar header_bar {
+        [title]
+        Adw.ViewSwitcher switcher_title_widget {
+          policy: wide;
+          stack: stack;
+        }
+        [end]
+        $VoucherMenuButton {}
+      }
+      content: stack;
+      [bottom]
+      Adw.ViewSwitcherBar switcher_bar {
+        stack: stack;
+      }
+    };
   }
 }
 
@@ -55,35 +60,4 @@ Adw.ViewStack stack {
   }
 }
 
-Adw.NavigationPage confirmation_page {
-  title: "Authorization";
-  child: Adw.ToolbarView {
-    [top]
-    Adw.HeaderBar {
-    }
-    content: Adw.StatusPage confirmation_status_page {
-      title: "Confirm operation";
-      child: Adw.Clamp {
-        maximum-size: 250;
-        child: Gtk.Box {
-          orientation: vertical;
-          Gtk.Button confirm_button {
-            styles ["pill", "suggested-action"]
-            label: "Confirm";
-          }
-          Gtk.Button reject_button {
-            styles ["pill"]
-            label: "Cancel";
-          }
-        };
-      };
-    };
-  };
-}
-
-Adw.AlertDialog spinner_dialog {
-  title: "Please wait";
-  body: "Waiting for response";
-  presentation-mode: auto;
-  extra-child: Adw.Spinner {};
-}
+$VoucherSpinnerDialog spinner_dialog {}
