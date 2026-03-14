@@ -2,8 +2,8 @@ using Gtk 4.0;
 using Adw 1;
 
 template $VoucherSpinnerDialog: Adw.AlertDialog {
-  title: "Please wait";
-  body: "Waiting for response";
+  title: _("Please wait");
+  body: _("Waiting for response");
   presentation-mode: auto;
   extra-child: Adw.Spinner {};
 }
