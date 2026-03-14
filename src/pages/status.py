@@ -1,5 +1,5 @@
-# menu_button.py
-# Copyright 2025 Kate
+# status.py
+# Copyright 2026 Kate
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from gi.repository import Adw
