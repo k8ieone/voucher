@@ -8,23 +8,52 @@ template $VoucherConfirmationPage: Adw.NavigationPage {
     [top]
     Adw.HeaderBar {
     }
-    content: Adw.StatusPage confirmation_status_page {
-      title: _("Confirm operation");
-      child: Adw.Clamp {
-        maximum-size: 250;
-        child: Gtk.Box {
+    content: Adw.NavigationPage {
+      title: "Confirmation";
+      child: Gtk.Viewport {
+        Gtk.Box {
           orientation: vertical;
-          Gtk.Button confirm_button {
-            styles ["pill", "suggested-action"]
-            label: _("Confirm");
-            clicked => $on_confirm();
+          valign: center;
+          Adw.Clamp {
+            maximum-size: 250;
+            Gtk.Box {
+              orientation: vertical;
+              spacing: 10;
+              Gtk.Box {
+                orientation: vertical;
+                spacing: 10;
+                margin-bottom: 60;
+                Gtk.Label {
+                  // TODO: Fill in based on LN action type
+                  label: "You're signing into";
+                  styles ["title-2"]
+                }
+                Gtk.Label application_name {
+                  styles ["title-1"]
+                }
+                Gtk.Label via_label {
+                  visible: false;
+                  label: _("via");
+                  styles ["caption"]
+                }
+                Gtk.Label oidc_url {
+                  visible: false;
+                  styles ["monospace"]
+                }
+              }
+              Gtk.Button confirm_button {
+                styles ["pill", "suggested-action"]
+                label: _("Confirm");
+                clicked => $on_confirm();
+              }
+              Gtk.Button reject_button {
+                styles ["pill"]
+                label: _("Cancel");
+                clicked => $on_cancel();
+              }
+            }
           }
-          Gtk.Button reject_button {
-            styles ["pill"]
-            label: _("Cancel");
-            clicked => $on_cancel();
-          }
-        };
+        }
       };
     };
   };

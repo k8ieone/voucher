@@ -100,7 +100,9 @@ class VoucherWindow(Adw.ApplicationWindow):
         # print(keyring.get_password("Voucher", "test"))
         # else:
         #     self.generate_key()
-        # test = VoucherConfirmationPage()
+        # test = VoucherConfirmationPage(appname="qra.mcld.eu")
+        # test = VoucherConfirmationPage(appname="Authentik", address="https://qra.mcld.eu")
+        # test = VoucherConfirmationPage(appname="Dex Demo", provider_address="http://localhost:8080")
         # self.main_view.push(test)
         #self.display_dialog("hihjiifsf", "jaksdfjsalkfa", [{"id": "whatever", "label": "Whatever"}])
 
@@ -189,4 +191,4 @@ class VoucherWindow(Adw.ApplicationWindow):
             # TODO: Only call identify when talking to Quorra
             self.current_request = (parsed)
             self.identify()
-            self.main_view.push(VoucherConfirmationPage(address=parsed.hostname))
+            self.main_view.push(VoucherConfirmationPage(appname=parsed.hostname))
