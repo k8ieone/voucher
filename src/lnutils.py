@@ -2,7 +2,7 @@
 # Copyright 2026 Kate
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import keyring
+from gi.repository import Secret
 
 import hmac
 import hashlib
@@ -25,19 +25,26 @@ from cryptography.hazmat.backends import default_backend
 
 from gi.repository import Gio
 
-def generate_key(name: str, settings: Gio.Settings) -> None:
+SECRET_STORE_SCHEMA = Secret.Schema.new("one.k8ie.Voucher.seeds",
+    Secret.SchemaFlags.NONE,
+    {
+        "label": Secret.SchemaAttributeType.STRING
+    }
+)
+
+def generate_key(label: str, settings: Gio.Settings) -> None:
     mnemo = Mnemonic("english").generate(strength=256)
-    keyring.set_password("Voucher", name, mnemo)
+    Secret.password_store_sync(SECRET_STORE_SCHEMA, {"label": label}, Secret.COLLECTION_DEFAULT, label, mnemo, None)
     # TODO: Don't overwrite the whole list
-    settings.set_strv("identities", [name])
+    settings.set_strv("identities", [label])
 
 
-def derive_lnurl_master_key(name: str) -> bytes:
+def derive_lnurl_master_key(label: str) -> bytes:
     """
     Derive the LNURL-auth master key from a BIP-39 mnemonic.
     Uses BIP-32 derivation path m/138'/0 as per the LNURL-auth spec.
     """
-    seed = Mnemonic.to_seed(keyring.get_password("Voucher", name))
+    seed = Mnemonic.to_seed(Secret.password_lookup_sync(SECRET_STORE_SCHEMA, {"label": label}, None))
 
     # Derive the root key from the seed
     root_key = bip32utils.BIP32Key.fromEntropy(seed)

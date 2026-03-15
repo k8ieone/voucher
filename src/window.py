@@ -20,11 +20,11 @@
 from gi.repository import Adw
 from gi.repository import Gtk
 from gi.repository import Gio
+from gi.repository import Secret
 
 from urllib.parse import uses_params, urlparse, parse_qs
 
 import bech32
-import keyring
 
 import requests
 from requests.exceptions import HTTPError
@@ -36,7 +36,7 @@ from .status import VoucherStatusTab
 from .confirmation import VoucherConfirmationPage
 from .spinner_dialog import VoucherSpinnerDialog
 
-from .lnutils import sign_k1
+from .lnutils import generate_key, sign_k1, SECRET_STORE_SCHEMA
 
 TASK_DATA = {}
 
@@ -90,9 +90,9 @@ class VoucherWindow(Adw.ApplicationWindow):
         self.settings = self.get_application().settings
         identities = self.settings.get_strv("identities")
         if len(identities) == 0:
-            self.generate_key("key 1", self.settings)
+            generate_key("key 1", self.settings)
         print(self.settings.get_strv("identities"))
-        print(keyring.get_password("Voucher", "key 1"))
+        print(Secret.password_lookup_sync(SECRET_STORE_SCHEMA, {"label": "key 1"}, None))
         #self.setup_buttons()
         # if keyring.get_credential("Voucher", "test") is None:
         #     keyring.set_password("Voucher", "test", "whatever")
