@@ -36,7 +36,7 @@
         "flatpak-deps/python3-setuptools_rust.json",
         "flatpak-deps/python3-maturin.json",
         "flatpak-deps/python3-cffi.json",
-        "flatpak-deps/python3-cryptography.json"
+        "flatpak-deps/python3-cryptography.json",
         {
             "name" : "voucher",
             "builddir" : true,
