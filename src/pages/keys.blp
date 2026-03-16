@@ -2,9 +2,52 @@ using Gtk 4.0;
 using Adw 1;
 
 template $VoucherKeysTab: Adw.NavigationPage {
+  realize => $on_show();
   title: "keys";
   child: Adw.StatusPage {
     title: _("Keys list");
     description: _("This page will allow you to manage your keys");
+    child: Adw.Clamp {
+      Adw.PreferencesGroup {
+        Adw.ExpanderRow {
+          title: _("key 1");
+        }
+        Adw.ExpanderRow {
+          title: _("key 2");
+          Adw.WrapBox {
+            Gtk.Button {
+              child: Adw.ButtonContent {
+                label: "1. correct";
+                icon-name: "checkmark-symbolic";
+              };
+              styles ["pill", "flat", "success"]
+            }
+            Gtk.Button {
+              child: Adw.ButtonContent {
+                label: "2. horse";
+                icon-name: "checkmark-symbolic";
+              };
+              styles ["pill", "flat", "success"]
+            }
+            Gtk.Button {
+              label: "3. battery";
+              styles ["pill", "flat"]
+            }
+            Gtk.Button {
+              label: "4. whatever";
+              styles ["pill", "flat"]
+            }
+            Gtk.Button {
+              label: "5. helmet";
+              styles ["pill", "flat"]
+            }
+            Gtk.Button {
+              label: "6. either";
+              styles ["pill", "flat"]
+            }
+          }
+        }
+      }
+    };
   };
 }
