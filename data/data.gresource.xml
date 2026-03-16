@@ -3,5 +3,6 @@
   <gresource prefix="/one/k8ie/Voucher/icons/scalable/actions">
     <file alias="test-pass-symbolic.svg" preprocess="xml-stripblanks">icons/hicolor/scalable/actions/test-pass-symbolic.svg</file>
     <file alias="globe-symbolic.svg" preprocess="xml-stripblanks">icons/hicolor/scalable/actions/globe-symbolic.svg</file>
+    <file alias="checkmark-symbolic.svg" preprocess="xml-stripblanks">icons/hicolor/scalable/actions/checkmark-symbolic.svg</file>
   </gresource>
 </gresources>
