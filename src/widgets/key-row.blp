@@ -1,0 +1,13 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $VoucherKeyRow: Adw.ActionRow {
+  // title: _("Key 5");
+  subtitle: _("Last used 13 minutes ago");
+  activatable: true;
+  activated => $on_click();
+  [suffix]
+  Gtk.Image {
+    icon-name: "go-next-symbolic";
+  }
+}

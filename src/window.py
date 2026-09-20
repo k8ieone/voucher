@@ -82,8 +82,8 @@ def _task_internal_method (task, source_object, task_data, cancellable):
 class VoucherWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'VoucherWindow'
     uses_params.append('lightning')
-    main_view = Gtk.Template.Child()
-    spinner_dialog = Gtk.Template.Child()
+    main_view: Gtk.Widget = Gtk.Template.Child()
+    spinner_dialog: Gtk.Widget = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -107,7 +107,7 @@ class VoucherWindow(Adw.ApplicationWindow):
         #self.display_dialog("hihjiifsf", "jaksdfjsalkfa", [{"id": "whatever", "label": "Whatever"}])
 
 
-    def display_dialog(self, message, text=None, responses=[{"id": "ok", "label": "Okay"}]):
+    def display_dialog(self, message: str, text: str|None=None, responses: list[dict[str, str]]=[{"id": "ok", "label": "Okay"}]):
         # Prevents a critical Adwaita warning
         if text is None:
             d = Adw.AlertDialog(heading=message)
@@ -118,7 +118,7 @@ class VoucherWindow(Adw.ApplicationWindow):
         d.present(parent=self)
 
 
-    def finish_identify(self, window, task, whatevs):
+    def finish_identify(self, window: Gtk.Window, task: Gio.Task, whatevs):
         """Callback - function called after an identify request finishes"""
         task_data = TASK_DATA[task.get_task_data()]
         self.spinner_dialog.force_close()
@@ -129,7 +129,7 @@ class VoucherWindow(Adw.ApplicationWindow):
         # Cleanup
         del TASK_DATA[task.get_task_data()]
 
-    def finish_authenticate_request(self, window, task, whatevs):
+    def finish_authenticate_request(self, window: Gtk.Window, task: Gio.Task, whatevs):
         """Callback - function called after an authenticate request finishes"""
         task_data = TASK_DATA[task.get_task_data()]
         self.spinner_dialog.force_close()
@@ -155,7 +155,7 @@ class VoucherWindow(Adw.ApplicationWindow):
         # threaded_request(self.finish_identify, "post", api_addr + "/mobile/aqr/identify", body=body, params=params)
 
 
-    def pop_confirmation_page(self, widget):
+    def pop_confirmation_page(self, widget: Gtk.Widget):
         self.main_view.pop()
 
 
@@ -175,7 +175,7 @@ class VoucherWindow(Adw.ApplicationWindow):
         threaded_request(self.finish_authenticate_request, "get", api_path, params=params)
 
 
-    def handle_uri(self, uri):
+    def handle_uri(self, uri: str) -> None:
         # TODO: Error handling for invalid URLs
         ln_parsed = urlparse(uri)
         # TODO: Don't hard-code lnurl?
