@@ -4,50 +4,98 @@ using Adw 1;
 template $VoucherKeysTab: Adw.NavigationPage {
   realize => $on_show();
   title: "keys";
-  child: Adw.StatusPage {
-    title: _("Keys list");
-    description: _("This page will allow you to manage your keys");
-    child: Adw.Clamp {
-      Adw.PreferencesGroup {
-        Adw.ExpanderRow {
-          title: _("key 1");
-        }
-        Adw.ExpanderRow {
-          title: _("key 2");
-          Adw.WrapBox {
-            Gtk.Button {
-              child: Adw.ButtonContent {
-                label: "1. correct";
-                icon-name: "checkmark-symbolic";
-              };
-              styles ["pill", "flat", "success"]
-            }
-            Gtk.Button {
-              child: Adw.ButtonContent {
-                label: "2. horse";
-                icon-name: "checkmark-symbolic";
-              };
-              styles ["pill", "flat", "success"]
-            }
-            Gtk.Button {
-              label: "3. battery";
-              styles ["pill", "flat"]
-            }
-            Gtk.Button {
-              label: "4. whatever";
-              styles ["pill", "flat"]
-            }
-            Gtk.Button {
-              label: "5. helmet";
-              styles ["pill", "flat"]
-            }
-            Gtk.Button {
-              label: "6. either";
-              styles ["pill", "flat"]
-            }
-          }
-        }
+  child: Adw.PreferencesPage {
+      Adw.PreferencesGroup keys_list {
+        title: _("Your Keys");
+        description: _("These keys represent your online identities");
+        header-suffix: Gtk.Button {
+          styles ["flat", "image-text-button"]
+          tooltip-text: _("New Key");
+          clicked => $new_key();
+          child: Adw.ButtonContent {
+            label: _("New Key");
+            icon-name: "list-add-symbolic";
+          };
+        };
+        // Adw.ExpanderRow {
+        //   title: _("key 1");
+        //   subtitle: _("Last used 20 minutes ago");
+        //   Adw.Clamp {
+        //   Gtk.Box {
+        //     halign: center;
+        //     orientation: horizontal;
+        //     Adw.ButtonRow {
+        //       title: _("Backup seed");
+        //       start-icon-name: "text-editor-symbolic";
+
+        //     }
+        //     Adw.ButtonRow {
+        //       title: _("Delete key");
+        //       start-icon-name: "user-trash-symbolic";
+        //       styles ["destructive-action"]
+        //     }
+        //   }
+        //   }
+        // }
+        // Adw.ActionRow {
+        //   title: _("New Key");
+          // subtitle: _("Last used 13 minutes ago");
+        //   activatable: true;
+        //   [suffix]
+        //   Gtk.Image {
+        //     icon-name: "go-next-symbolic";
+        //   }
+        // }
+        // Adw.ActionRow {
+        //   title: _("Key 2");
+        //   subtitle: _("Last used 20 years ago");
+        //   Gtk.Button {
+        //     icon-name: "text-editor-symbolic";
+        //     styles ["flat"]
+        //     valign: center;
+        //   }
+        //   Gtk.Button {
+        //     icon-name: "user-trash-symbolic";
+        //     styles ["flat", "destructive-action"]
+        //     valign: center;
+        //   }
+        // }
+        // Adw.ExpanderRow {
+        //   title: _("key 2");
+        //   subtitle: _("Last used 1 hour ago");
+        //   Adw.WrapBox {
+        //     Gtk.Button {
+        //       child: Adw.ButtonContent {
+        //         label: "1. correct";
+        //         icon-name: "checkmark-symbolic";
+        //       };
+        //       styles ["pill", "flat", "success"]
+        //     }
+        //     Gtk.Button {
+        //       child: Adw.ButtonContent {
+        //         label: "2. horse";
+        //         icon-name: "checkmark-symbolic";
+        //       };
+        //       styles ["pill", "flat", "success"]
+        //     }
+        //     Gtk.Button {
+        //       label: "3. battery";
+        //       styles ["pill", "flat"]
+        //     }
+        //     Gtk.Button {
+        //       label: "4. whatever";
+        //       styles ["pill", "flat"]
+        //     }
+        //     Gtk.Button {
+        //       label: "5. helmet";
+        //       styles ["pill", "flat"]
+        //     }
+        //     Gtk.Button {
+        //       label: "6. either";
+        //       styles ["pill", "flat"]
+        //     }
+        //   }
+        // }
       }
     };
-  };
 }

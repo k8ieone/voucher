@@ -35,8 +35,9 @@ SECRET_STORE_SCHEMA = Secret.Schema.new("one.k8ie.Voucher.seeds",
 def generate_key(label: str, settings: Gio.Settings) -> None:
     mnemo = Mnemonic("english").generate(strength=256)
     Secret.password_store_sync(SECRET_STORE_SCHEMA, {"label": label}, Secret.COLLECTION_DEFAULT, label, mnemo, None)
-    # TODO: Don't overwrite the whole list
-    settings.set_strv("identities", [label])
+    current = settings.get_strv("identities")
+    current.append(label)
+    settings.set_strv("identities", current)
 
 
 def derive_lnurl_master_key(label: str) -> bytes:
