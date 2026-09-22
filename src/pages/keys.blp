@@ -8,9 +8,11 @@ template $VoucherKeysTab: Adw.NavigationPage {
       Adw.PreferencesGroup keys_list {
         title: _("Your Keys");
         description: _("These keys represent your online identities");
-        header-suffix: Gtk.Button {
+        header-suffix: Adw.SplitButton {
           styles ["flat", "image-text-button"]
-          tooltip-text: _("New Key");
+          valign: center;
+          // tooltip-text: _("New Key");
+          menu-model: add_button_menu;
           clicked => $new_key();
           child: Adw.ButtonContent {
             label: _("New Key");
@@ -98,4 +100,10 @@ template $VoucherKeysTab: Adw.NavigationPage {
         // }
       }
     };
+}
+
+menu add_button_menu {
+  item {
+    label: _("Restore Key Backup");
+  }
 }
