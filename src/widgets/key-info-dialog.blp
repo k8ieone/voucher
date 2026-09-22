@@ -2,13 +2,72 @@ using Gtk 4.0;
 using Adw 1;
 
 template $VoucherKeyInfoDialog: Adw.PreferencesDialog {
-    content-width: 800;
-    content-height: 600;
+    // content-width: 800;
+    // content-height: 600;
     Adw.PreferencesPage {
-        Adw.PreferencesGroup {         
-            Adw.ActionRow {
-                title: _("Whatever");
-            }
+      title: _("Key Details?");
+      Adw.PreferencesGroup {
+        title: _("Settings");
+        Adw.EntryRow {
+          title: _("Name");
+          text: "whatever";
+          show-apply-button: true;
         }
+        Adw.ButtonRow {
+          title: _("Delete!");
+          styles ["destructive-action"]
+        }
+      }
+      Adw.PreferencesGroup {
+        title: _("Usage History");
+        Adw.ActionRow {
+          title: _("example.com");
+          subtitle: _("15 minutes ago");
+          [suffix]
+          Gtk.Button {
+            styles ["flat", "image-text-button"]
+            valign: center;
+            child: Adw.ButtonContent {
+              icon-name: "user-trash-symbolic";
+            };
+          }
+        }
+        Adw.ActionRow {
+          title: _("me.net");
+          subtitle: _("25 minutes ago");
+          [suffix]
+          Gtk.Button {
+            styles ["flat", "image-text-button"]
+            valign: center;
+            child: Adw.ButtonContent {
+              icon-name: "user-trash-symbolic";
+            };
+          }
+        }
+        Adw.ActionRow {
+          title: _("quorra.com");
+          subtitle: _("43 minutes ago");
+          [suffix]
+          Gtk.Button {
+            styles ["flat", "image-text-button"]
+            valign: center;
+            child: Adw.ButtonContent {
+              icon-name: "user-trash-symbolic";
+            };
+          }
+        }
+        Adw.ActionRow {
+          title: _("lightninglogin.live");
+          subtitle: _("1 hour ago");
+          [suffix]
+          Gtk.Button {
+            styles ["flat", "image-text-button"]
+            valign: center;
+            child: Adw.ButtonContent {
+              icon-name: "user-trash-symbolic";
+            };
+          }
+        }
+      }
     }
 }
