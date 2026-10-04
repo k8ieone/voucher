@@ -6,7 +6,15 @@ on:
       - data/**
       - flatpak-deps/**
       - po/**
+      - .github/workflows/flatpak.yml
   pull_request:
+    paths:
+      - one.k8ie.Voucher.json
+      - src/**
+      - data/**
+      - flatpak-deps/**
+      - po/**
+      - .github/workflows/flatpak.yml
   workflow_dispatch:
 name: Flatpak - dev
 jobs:
