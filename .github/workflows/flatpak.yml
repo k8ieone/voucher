@@ -37,7 +37,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
       with:
-        bundle: identities.flatpak
+        bundle: voucher.flatpak
         manifest-path: one.k8ie.Voucher.json
         cache-key: flatpak-builder-${{ github.sha }}
         arch: ${{ matrix.arch }}
