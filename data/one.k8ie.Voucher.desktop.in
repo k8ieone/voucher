@@ -1,11 +1,12 @@
 [Desktop Entry]
 Name=Voucher
-Exec=voucher
+Comment=Keychain for Quorra
+Exec=voucher %u
 Icon=one.k8ie.Voucher
 Terminal=false
 Type=Application
 Categories=Utility;
-Keywords=Quorra;
+Keywords=Quorra;LNURL;Login;Keychain;
 StartupNotify=true
 DBusActivatable=true
 X-Purism-FormFactor=Workstation;Mobile;
